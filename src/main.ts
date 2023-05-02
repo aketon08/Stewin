@@ -13,7 +13,7 @@ class Game {
         this.ctx = this.canvas.getContext("2d");
         this.canvas.width = this.dimensions.x;
         this.canvas.height = this.dimensions.y;
-        this.map = new WalkerGenerator(new Vec(10, 10), this.ctx, 10, 0.2, 100);
+        this.map = new WalkerGenerator(new Vec(10, 10), this.ctx, 10, 0.7, 100);
     }
     test() {
         this.map.initMap();

@@ -60,6 +60,7 @@ export class WalkerGenerator {
     tick() {
         // While the map is not filled
 
+        // Tick every waitTime milliseconds
         let int = setInterval(() => {
             console.log("tick")
             if(this.tileCount / (this.mapDimensions.x * this.mapDimensions.y) < this.fillPercentage) {
@@ -80,10 +81,12 @@ export class WalkerGenerator {
                 this.updatePosition();
                 this.draw(this.ctx);
             } else {
+                this.makeWater(this.ctx);
+                this.draw(this.ctx);
                 clearInterval(int);
             }
         }, this.waitTime)
-
+        // After floor tiles have been created
     }
     // Draw the map
     draw(ctx) {
@@ -93,6 +96,21 @@ export class WalkerGenerator {
             for (let j = 0; j < this.mapDimensions.y; j++) {
                 if (this.map[i][j] == TileType.Floor) {
                     ctx.fillStyle = "#000";
+                    ctx.fillRect(ctx.canvas.width / (this.mapDimensions.x) * i, ctx.canvas.height / (this.mapDimensions.y) * j, ctx.canvas.width / this.mapDimensions.x, ctx.canvas.height / this.mapDimensions.y);
+                } else if (this.map[i][j] == TileType.Water) {
+                    ctx.fillStyle = "#00f";
+                    ctx.fillRect(ctx.canvas.width / (this.mapDimensions.x) * i, ctx.canvas.height / (this.mapDimensions.y) * j, ctx.canvas.width / this.mapDimensions.x, ctx.canvas.height / this.mapDimensions.y);
+                }
+            }
+        }
+    }
+    makeWater(ctx) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        for (let i = 0; i < this.mapDimensions.x; i++) {
+            for (let j = 0; j < this.mapDimensions.y; j++) {
+                if (this.map[i][j] == TileType.Empty) {
+                    this.map[i][j] = TileType.Water
+                    ctx.fillStyle = "#00f";
                     ctx.fillRect(ctx.canvas.width / (this.mapDimensions.x) * i, ctx.canvas.height / (this.mapDimensions.y) * j, ctx.canvas.width / this.mapDimensions.x, ctx.canvas.height / this.mapDimensions.y);
                 }
             }
@@ -121,8 +139,8 @@ export class WalkerGenerator {
             }
                 // Check if walker is out of bounds
             console.log("before"+walker.position.x, walker.position.y)
-            walker.position.x = walker.position.x > this.mapDimensions.x ? 0 : walker.position.x < 0 ? this.mapDimensions.x : walker.position.x;
-            walker.position.y = walker.position.y > this.mapDimensions.y ? 0 : walker.position.y < 0 ? this.mapDimensions.y : walker.position.y;  
+            walker.position.x = walker.position.x > this.mapDimensions.x - 1 ? 0 : walker.position.x < 0 ? (this.mapDimensions.x - 1) : walker.position.x;
+            walker.position.y = walker.position.y > this.mapDimensions.y - 1 ? 0 : walker.position.y < 0 ? (this.mapDimensions.y - 1) : walker.position.y;  
             console.log("after"+walker.position.x, walker.position.y)          
         }
     }
