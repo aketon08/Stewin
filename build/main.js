@@ -561,8 +561,13 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Game", ()=>Game);
 var _utils = require("./utils");
-var _mapgen = require("./engine/mapgen");
+var _walker = require("./engine/walker");
+var _ecs = require("./ecs/ecs");
+var _render = require("./ecs/systems/render");
+var _move = require("./ecs/systems/move");
+var _components = require("./ecs/components");
 class Game {
+    mapOffset = new (0, _utils.Vec2D)(0, 0);
     constructor(dimensions){
         this.dimensions = dimensions;
         this.canvas = document.getElementById("canvas");
@@ -572,24 +577,55 @@ class Game {
         this.canvas.height = this.dimensions.y;
         this.ctx.fillStyle = "#000";
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-        this.simpleMap = new (0, _mapgen.WalkerGenerator)(new (0, _utils.Vec2D)(50, 50), this.ctx, 10, 0.4, 5, true, this);
+        this.playerSize = new (0, _utils.Vec2D)(this.canvas.width / 10);
+        this.mapDimensions = new (0, _utils.Vec2D)(50);
+        this.mapOffset = new (0, _utils.Vec2D)(-(this.playerSize.x * this.mapDimensions.x / 2));
+    }
+    init() {
+        this.simpleMap = new (0, _walker.WalkerGenerator)(this.mapDimensions, this.ctx, 10, 0.4, 0, true, this);
+        this.ecs = new _ecs.ECS();
+        this.initPlayer();
+        this.running = true;
+        this.gameLoop();
     }
     draw(position, dimensions, image, imgSrcPos, imgSrcDim) {
         //this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
         image == null ? this.ctx.fillRect(position.x, position.y, dimensions.x, dimensions.y) : this.ctx.drawImage(image, imgSrcPos.x, imgSrcPos.y, imgSrcDim.x, imgSrcDim.y, position.x, position.y, dimensions.x, dimensions.y);
     }
+    initPlayer() {
+        this.ecs.addEntity(new (0, _ecs.Entity)(0));
+        this.ecs.entities[0].components = [
+            new (0, _components.ImageComponent)(document.getElementById("spritesheet"), new _utils.Vec2D(0, 64), new _utils.Vec2D(32, 32)),
+            new (0, _components.PositionComponent)(new _utils.Vec2D(this.canvas.width / 2 - this.playerSize.x / 2, this.canvas.height / 2 - this.playerSize.y / 2)),
+            new (0, _components.DimensionComponent)(this.playerSize)
+        ];
+        this.ecs.addSystem(new (0, _render.Render)());
+        this.ecs.addSystem(new (0, _move.Move)());
+    }
+    gameLoop() {
+        if (this.running) {
+            if (this.simpleMap.generated) {
+                this.simpleMap.draw(this.ctx, this.mapOffset);
+                this.ecs.update(this.ctx, this);
+            }
+            //console.log(this.mapOffset)
+            _utils.sleep(1000 / 60).then(()=>this.gameLoop());
+        }
+    }
 }
 const DIMENSIONS = new (0, _utils.Vec2D)(innerHeight / 6 * 5);
 const GAME = new Game(DIMENSIONS);
+GAME.init();
 addEventListener("click", (e)=>{
     if (e.target == document.getElementById("generateMap")) GAME.simpleMap.initMap();
 });
 
-},{"./utils":"52QlR","./engine/mapgen":"3c3Dr","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"52QlR":[function(require,module,exports) {
+},{"./utils":"52QlR","./engine/walker":"lWyh1","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH","./ecs/ecs":"96EPF","./ecs/systems/render":"4mhar","./ecs/components":"2B3cB","./ecs/systems/move":"l5LvQ"}],"52QlR":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2D", ()=>Vec2D);
 parcelHelpers.export(exports, "Direction2D", ()=>Direction2D);
+parcelHelpers.export(exports, "sleep", ()=>sleep);
 class Vec2D {
     constructor(x, y){
         this.x = x;
@@ -611,6 +647,9 @@ class Direction2D {
         return this.cardinalDirections[Math.ceil(Math.random() * 4 - 1)];
     }
 }
+const sleep = (ms)=>{
+    return new Promise((resolve)=>setTimeout(resolve, ms));
+};
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"b4oyH":[function(require,module,exports) {
 exports.interopDefault = function(a) {
@@ -642,7 +681,7 @@ exports.export = function(dest, destName, get) {
     });
 };
 
-},{}],"3c3Dr":[function(require,module,exports) {
+},{}],"lWyh1":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "TileType", ()=>TileType);
@@ -651,14 +690,16 @@ var _utils = require("../utils");
 let TileType;
 (function(TileType) {
     TileType[TileType["Empty"] = 0] = "Empty";
-    TileType[TileType["Floor"] = 1] = "Floor";
-    TileType[TileType["Sand"] = 2] = "Sand";
-    TileType[TileType["Water"] = 3] = "Water";
+    TileType[TileType["FloorEmpty"] = 1] = "FloorEmpty";
+    TileType[TileType["FloorFlower"] = 2] = "FloorFlower";
+    TileType[TileType["FloorGrass"] = 3] = "FloorGrass";
+    TileType[TileType["Sand"] = 4] = "Sand";
+    TileType[TileType["Water"] = 5] = "Water";
 })(TileType || (TileType = {}));
-function sleep(ms) {
-    return new Promise((resolve)=>setTimeout(resolve, ms));
-}
-class WalkerObject {
+// Sleep function, takes in ms to sleep for
+/* const sleep = (ms) => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+} */ class WalkerObject {
     constructor(position, direction, chanceToChange){
         this.position = position;
         this.direction = direction;
@@ -666,6 +707,7 @@ class WalkerObject {
     }
 }
 class WalkerGenerator {
+    floorConstraints = new (0, _utils.Vec2D)(0.1, 0.25);
     constructor(mapDimensions, ctx, maxWalkers, fillPercentage, waitTime, visualise = false, game){
         this.mapDimensions = mapDimensions;
         this.maxWalkers = maxWalkers;
@@ -673,7 +715,7 @@ class WalkerGenerator {
         this.waitTime = waitTime;
         this.ctx = ctx;
         this.visualise = visualise;
-        this.running = false;
+        this.generated = false;
         this.game = game;
     }
     // Initialize the map
@@ -689,19 +731,17 @@ class WalkerGenerator {
         // Initial walker
         this.walkers.push(new WalkerObject(new (0, _utils.Vec2D)(Math.floor(this.mapDimensions.x / 2), Math.floor(this.mapDimensions.y / 2)), (0, _utils.Direction2D).getRandomDirection(), 0.5));
         let curWalker = this.walkers[0];
-        this.map[curWalker.position.x][curWalker.position.y] = TileType.Floor;
-        this.tileCount++;
-        this.running = true;
+        this.createRandomFloorTile(curWalker.position, this.floorConstraints);
         if (!this.visualise) this.loading();
         this.tick();
     }
     // Tick the map generation
     tick() {
         // Tick every waitTime milliseconds
-        /*console.log("tick")*/ // If the map is not filled
-        if (!(this.tileCount / (this.mapDimensions.x * this.mapDimensions.y) < this.fillPercentage)) {
+        // If the map is filled
+        if (this.tileCount / (this.mapDimensions.x * this.mapDimensions.y) >= this.fillPercentage) {
             this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-            this.running = false;
+            this.generated = true;
             this.makeSand(this.ctx);
             this.makeWater(this.ctx);
             this.draw(this.ctx);
@@ -710,36 +750,47 @@ class WalkerGenerator {
         }
         // For every walker
         for (let walker of this.walkers)// Make the walker create a floor tile where it is
-        if (this.map[walker.position.x][walker.position.y] == TileType.Empty) {
-            this.map[walker.position.x][walker.position.y] = TileType.Floor;
-            this.tileCount++;
-        }
+        if (this.map[walker.position.x][walker.position.y] == TileType.Empty) this.createRandomFloorTile(walker.position, new (0, _utils.Vec2D)(0.1, 0.25));
         // Update walkers
         this.chanceToRemove();
         this.changeDirection();
         this.chanceToCreate();
         this.updatePosition();
         if (this.visualise) this.draw(this.ctx);
-        sleep(this.waitTime).then(()=>this.tick());
+        _utils.sleep(this.waitTime).then(()=>this.tick());
     }
     // Draw the map
-    draw(ctx) {
+    draw(ctx, mapOffset = new (0, _utils.Vec2D)(0, 0)) {
         //console.log("draw")
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         for(let i = 0; i < this.mapDimensions.x; i++)for(let j = 0; j < this.mapDimensions.y; j++){
-            let position = new (0, _utils.Vec2D)(Math.floor(this.ctx.canvas.width / this.mapDimensions.x * i), Math.floor(this.ctx.canvas.height / this.mapDimensions.y * j));
-            let dimensions = new (0, _utils.Vec2D)(Math.ceil(this.ctx.canvas.width / this.mapDimensions.x), Math.ceil(this.ctx.canvas.height / this.mapDimensions.y));
-            if (this.map[i][j] == TileType.Floor) {
-                if (this.running) {
+            let position;
+            let dimensions;
+            if (this.generated) {
+                position = new (0, _utils.Vec2D)(Math.floor(this.game.playerSize.x * i + mapOffset.x), Math.floor(this.game.playerSize.y * j + mapOffset.y));
+                dimensions = new (0, _utils.Vec2D)(this.game.playerSize.x, this.game.playerSize.y);
+            } else {
+                position = new (0, _utils.Vec2D)(Math.floor(this.game.canvas.width / this.mapDimensions.x * i), Math.floor(this.game.canvas.height / this.mapDimensions.y * j));
+                dimensions = new (0, _utils.Vec2D)(this.game.canvas.width / this.mapDimensions.x, this.game.canvas.height / this.mapDimensions.y);
+            }
+            // Current tile
+            let tile = this.map[i][j];
+            if ([
+                1,
+                2,
+                3
+            ].includes(tile)) {
+                if (!this.generated) {
                     this.game.draw(position, dimensions, document.getElementById("tilesheet"), new (0, _utils.Vec2D)(0, 32), new (0, _utils.Vec2D)(32, 32));
                     continue;
                 }
-                let rand = Math.random();
-                rand < 0.1 ? this.game.draw(position, dimensions, document.getElementById("tilesheet"), new (0, _utils.Vec2D)(32, 0), new (0, _utils.Vec2D)(32, 32)) : rand < 0.25 ? this.game.draw(position, dimensions, document.getElementById("tilesheet"), new (0, _utils.Vec2D)(0, 0), new (0, _utils.Vec2D)(32, 32)) : this.game.draw(position, dimensions, document.getElementById("tilesheet"), new (0, _utils.Vec2D)(0, 32), new (0, _utils.Vec2D)(32, 32));
+                if (tile == TileType.FloorEmpty) this.game.draw(position, dimensions, document.getElementById("tilesheet"), new (0, _utils.Vec2D)(0, 32), new (0, _utils.Vec2D)(32, 32));
+                else if (tile == TileType.FloorGrass) this.game.draw(position, dimensions, document.getElementById("tilesheet"), new (0, _utils.Vec2D)(0, 0), new (0, _utils.Vec2D)(32, 32));
+                else if (tile == TileType.FloorFlower) this.game.draw(position, dimensions, document.getElementById("tilesheet"), new (0, _utils.Vec2D)(32, 0), new (0, _utils.Vec2D)(32, 32));
                 continue;
             //this.ctx.fillStyle = "#68b547";
             } else if (this.map[i][j] == TileType.Sand) {
-                this.game.draw(position, new (0, _utils.Vec2D)(32, 32), document.getElementById("tilesheet"), new (0, _utils.Vec2D)(32, 32), new (0, _utils.Vec2D)(32, 32));
+                this.game.draw(position, dimensions, document.getElementById("tilesheet"), new (0, _utils.Vec2D)(32, 32), new (0, _utils.Vec2D)(32, 32));
                 continue;
             //this.ctx.fillStyle = "#bab473";
             } else if (this.map[i][j] == TileType.Water) this.ctx.fillStyle = "#377";
@@ -751,7 +802,11 @@ class WalkerGenerator {
     checkSurroundingTiles(x, y) {
         for(let i = -1; i < 2; i++){
             for(let j = -1; j < 2; j++)if (this.map[x + i] != undefined && this.map[x + i][y + j] != undefined) {
-                if (this.map[x + i][y + j] == TileType.Floor) return true;
+                if ([
+                    1,
+                    2,
+                    3
+                ].includes(this.map[x + i][y + j])) return true;
             }
         }
     }
@@ -767,6 +822,14 @@ class WalkerGenerator {
         for(let i = 0; i < this.mapDimensions.x; i++){
             for(let j = 0; j < this.mapDimensions.y; j++)if (this.map[i][j] == TileType.Empty) this.map[i][j] = TileType.Water;
         }
+    }
+    // Create a floor tile at the given position
+    createRandomFloorTile(position, constraints) {
+        let rand = Math.random();
+        // constraints.x chance to create a flower tile
+        rand < constraints.x ? this.map[position.x][position.y] = TileType.FloorFlower : // constraints.y - constraints.x chance to create a grass tile
+        rand < constraints.y ? this.map[position.x][position.y] = TileType.FloorGrass : this.map[position.x][position.y] = TileType.FloorEmpty;
+        this.tileCount++;
     }
     // Move the walker one step in the direction it's facing
     updatePosition() {
@@ -785,26 +848,31 @@ class WalkerGenerator {
     changeDirection() {
         //console.log("changedirection")
         // For every walker
-        for (let walker of this.walkers)// If the walker is going to change direction
-        if (Math.random() < walker.chanceToChange) /* 0 = up, 1 = right, 2 = down, 3 = left */ // Change direction
-        walker.direction = (0, _utils.Direction2D).getRandomDirection();
+        for(let i = 0; i < this.walkers.length; i++){
+            let walker = this.walkers[i];
+            // If the walker is going to change direction
+            if (Math.random() < walker.chanceToChange) /* 0 = up, 1 = right, 2 = down, 3 = left */ // Change direction
+            walker.direction = (0, _utils.Direction2D).getRandomDirection();
+        }
     }
     // Chance to create a new walker
     chanceToCreate() {
-        //console.log("chancetocreate")
-        for (let walker of this.walkers)if (Math.random() < walker.chanceToChange && this.walkers.length < this.maxWalkers) {
-            // Set new walker's position and direction
-            let newPosition = new (0, _utils.Vec2D)(walker.position.x, walker.position.y);
-            let newDirection = (0, _utils.Direction2D).getRandomDirection();
-            // Add new walker
-            this.walkers.push(new WalkerObject(newPosition, newDirection, walker.chanceToChange));
+        for(let i = 0; i < this.walkers.length; i++){
+            let walker = this.walkers[i];
+            if (Math.random() < walker.chanceToChange && this.walkers.length < this.maxWalkers) {
+                // Set new walker's position and direction
+                let newPosition = new (0, _utils.Vec2D)(walker.position.x, walker.position.y);
+                let newDirection = (0, _utils.Direction2D).getRandomDirection();
+                // Add new walker
+                this.walkers.push(new WalkerObject(newPosition, newDirection, walker.chanceToChange));
+            }
         }
     }
     // Chance to remove a walker
     chanceToRemove() {
-        //console.log("chancetoremove")
         for (let walker of this.walkers)if (Math.random() < walker.chanceToChange && this.walkers.length > 1) this.walkers.splice(this.walkers.indexOf(walker), 1);
     }
+    // Loading screen
     loading() {
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
         this.ctx.fillStyle = "#000";
@@ -815,5 +883,168 @@ class WalkerGenerator {
     }
 }
 
-},{"../utils":"52QlR","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}]},["3mPmv","zQOKN"], "zQOKN", "parcelRequire94c2")
+},{"../utils":"52QlR","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"96EPF":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "ECS", ()=>ECS);
+parcelHelpers.export(exports, "Entity", ()=>Entity);
+parcelHelpers.export(exports, "System", ()=>System);
+class ECS {
+    constructor(){
+        this.entities = [];
+        this.systemManager = new SystemManager();
+    }
+    addEntity(entity) {
+        this.entities.push(entity);
+    }
+    addSystem(system) {
+        this.systemManager.systems.push(system);
+    }
+    update(ctx, game) {
+        this.systemManager.updateSystems(this.entities, ctx, game);
+    }
+}
+class SystemManager {
+    constructor(){
+        this.systems = [];
+    }
+    // Add a system to the system manager
+    addSystem(system) {
+        this.systems.push(system);
+    }
+    // Run all systems on all entities, if the entities have the required components
+    updateSystems(entities, ctx, game) {
+        for(let i = 0; i < this.systems.length; i++){
+            const system = this.systems[i];
+            for(let j = 0; j < entities.length; j++){
+                const entity = entities[j];
+                // console.log("Updating systems")
+                /* if(entity.components.every((c, i) => Object.getPrototypeOf(c).constructor == system.components[i])) {
+                    system.func(entity, ctx);
+                } else {
+                    console.warn("Entity does not have the required components")
+                    //console.log(Object.getPrototypeOf(entity.components[0]).constructor == system.components[0])
+                } */ let match = 0;
+                for(let k = 0; k < entity.components.length; k++){
+                    for(let l = 0; l < system.components.length; l++)if (Object.getPrototypeOf(entity.components[k]).constructor == system.components[l]) match++;
+                }
+                if (match == system.components.length) system.func(entity, ctx, game);
+            }
+        }
+    }
+}
+class Entity {
+    constructor(id){
+        this.id = id;
+    }
+    // Get a component by it's name
+    getComponent(name) {
+        // Loop through all components
+        for (let c of this.components){
+            // If the component's name matches the name we're looking for, return it
+            if (c.name == name) return c;
+        }
+    }
+}
+class System {
+    constructor(components, func){
+        this.components = components;
+        this.func = func;
+    }
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"4mhar":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Render", ()=>Render);
+var _ecs = require("../ecs");
+var _components = require("../components"); // cs = components
+class Render extends (0, _ecs.System) {
+    constructor(){
+        super([
+            _components.ImageComponent,
+            _components.PositionComponent,
+            _components.DimensionComponent
+        ], (entity, ctx)=>{
+            const image = entity.getComponent("image").image;
+            const srcPos = entity.getComponent("image").srcPos;
+            const srcDim = entity.getComponent("image").srcDim;
+            const pos = entity.getComponent("position").position;
+            const dim = entity.getComponent("dimensions").dimensions;
+            console.log("Rendering entity");
+            ctx.drawImage(image, srcPos.x, srcPos.y, srcDim.x, srcDim.y, pos.x, pos.y, dim.x, dim.y);
+        });
+    }
+}
+
+},{"../ecs":"96EPF","../components":"2B3cB","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"2B3cB":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Component", ()=>Component);
+parcelHelpers.export(exports, "ImageComponent", ()=>ImageComponent);
+parcelHelpers.export(exports, "PositionComponent", ()=>PositionComponent);
+parcelHelpers.export(exports, "DimensionComponent", ()=>DimensionComponent);
+class Component {
+    constructor(name){
+        this.name = name;
+    }
+}
+class ImageComponent extends Component {
+    constructor(image, srcPos, srcDim){
+        super("image");
+        this.image = image;
+        this.srcPos = srcPos;
+        this.srcDim = srcDim;
+    }
+}
+class PositionComponent extends Component {
+    constructor(position){
+        super("position");
+        this.position = position;
+    }
+}
+class DimensionComponent extends Component {
+    constructor(dimensions){
+        super("dimensions");
+        this.dimensions = dimensions;
+    }
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"l5LvQ":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Move", ()=>Move);
+var _ecs = require("../ecs");
+class Move extends (0, _ecs.System) {
+    speed = 3;
+    constructor(){
+        super([], (_, __, game)=>{
+            if (keys["w"] || keys["ArrowUp"]) {
+                if (keys["a"] || keys["ArrowLeft"] || keys["d"] || keys["ArrowRight"]) game.mapOffset.y += Math.sqrt(this.speed);
+                else game.mapOffset.y += this.speed;
+            }
+            if (keys["s"] || keys["ArrowDown"]) {
+                if (keys["a"] || keys["ArrowLeft"] || keys["d"] || keys["ArrowRight"]) game.mapOffset.y -= Math.sqrt(this.speed);
+                else game.mapOffset.y -= this.speed;
+            }
+            if (keys["a"] || keys["ArrowLeft"]) {
+                if (keys["w"] || keys["ArrowUp"] || keys["s"] || keys["ArrowDown"]) game.mapOffset.x += Math.sqrt(this.speed);
+                else game.mapOffset.x += this.speed;
+            }
+            if (keys["d"] || keys["ArrowRight"]) {
+                if (keys["w"] || keys["ArrowUp"] || keys["s"] || keys["ArrowDown"]) game.mapOffset.x -= Math.sqrt(this.speed);
+                else game.mapOffset.x -= 2;
+            }
+        });
+    }
+}
+const keys = [];
+document.addEventListener("keydown", (e)=>{
+    keys[e.key] = true;
+});
+document.addEventListener("keyup", (e)=>{
+    keys[e.key] = false;
+});
+
+},{"../ecs":"96EPF","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}]},["3mPmv","zQOKN"], "zQOKN", "parcelRequire94c2")
 

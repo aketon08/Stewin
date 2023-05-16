@@ -19,3 +19,7 @@ export class Direction2D {
         return this.cardinalDirections[Math.ceil((Math.random()*4)-1)]
     }
 }
+
+export const sleep = (ms) => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
