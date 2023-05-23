@@ -1,35 +1,39 @@
 import { System } from '../ecs';
-import { Entity } from '../ecs';
-import { PositionComponent } from '../components';
+import { Vec2D } from '../../utils';
 
 export class Move extends System {
     speed: number = 3;
+    moveX: number;
+    moveY: number;
     constructor() {
         super([], (_, __, game) => {
+            this.moveX = 0;
+            this.moveY = 0;
             if(keys['w']||keys['ArrowUp']) {
                 if(keys['a']||keys['ArrowLeft']||keys['d']||keys['ArrowRight'])
-                    game.mapOffset.y += Math.sqrt(this.speed)
+                    this.moveY += Math.sin(45)*(this.speed);
                 else
-                    game.mapOffset.y += this.speed;
+                    this.moveY += this.speed;
             }
             if(keys['s']||keys['ArrowDown']) {
                 if(keys['a']||keys['ArrowLeft']||keys['d']||keys['ArrowRight'])
-                    game.mapOffset.y -= Math.sqrt(this.speed)
+                    this.moveY -= Math.sin(45)*(this.speed);
                 else
-                    game.mapOffset.y -= this.speed;
+                    this.moveY -= this.speed;
             }
             if(keys['a']||keys['ArrowLeft']) {
                 if(keys['w']||keys['ArrowUp']||keys['s']||keys['ArrowDown'])
-                    game.mapOffset.x += Math.sqrt(this.speed)
+                    this.moveX += Math.sin(45)*(this.speed);
                 else
-                    game.mapOffset.x += this.speed;
+                    this.moveX += this.speed;
             }
             if(keys['d']||keys['ArrowRight']) {
                 if(keys['w']||keys['ArrowUp']||keys['s']||keys['ArrowDown'])
-                    game.mapOffset.x -= Math.sqrt(this.speed)
+                    this.moveX -= Math.sin(45)*(this.speed);
                 else
-                    game.mapOffset.x -= 2;
+                    this.moveX -= this.speed;
             }
+            game.mapOffset = Vec2D.add(game.mapOffset, new Vec2D(this.moveX, this.moveY))
         })
     }
 }

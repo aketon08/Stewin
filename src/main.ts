@@ -17,6 +17,7 @@ export class Game {
     running: boolean
     playerSize: Vec2D;
     mapDimensions: Vec2D;
+    generatingMap: boolean
     constructor(dimensions: Vec2D) {
         this.dimensions = dimensions;
         this.canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -28,13 +29,23 @@ export class Game {
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
         this.playerSize = new Vec2D(this.canvas.width / 10)
         this.mapDimensions = new Vec2D(50);
-        this.mapOffset = new Vec2D(-(this.playerSize.x * this.mapDimensions.x / 2))
+        // Position the character in the middle of the map
+        this.mapOffset = new Vec2D((this.canvas.width / 2) - ((this.playerSize.x * this.mapDimensions.x) / 2))
     }
     init() {
-        this.simpleMap = new WalkerGenerator(this.mapDimensions, this.ctx, 10, 0.4, 0, true, this);
-        this.ecs = new ECS.ECS()
-        this.initPlayer()
         this.running = true;
+        if(this.simpleMap!=undefined&&!this.simpleMap.generated) {
+            console.warn("Map is already generating")
+            return;
+        }
+        this.ecs = new ECS.ECS()
+        console.log(this.ecs.entities)
+        if(!(this.ecs.entities.length>0)) {
+            this.initPlayer()
+        }
+        this.simpleMap = new WalkerGenerator(this.mapDimensions, this.ctx, 10, 0.4, 0, true, this);
+        this.simpleMap.initMap()
+        //this.generatingMap = true;
         this.gameLoop();
     }
     draw(position: Vec2D, dimensions: Vec2D, image?, imgSrcPos?: Vec2D, imgSrcDim?: Vec2D) {
@@ -52,25 +63,26 @@ export class Game {
         ]
         this.ecs.addSystem(new Render())
         this.ecs.addSystem(new Move())
+        //console.log(this.ecs)
     }
     gameLoop() {
+        //console.time("loop")
         if(this.running){
             if(this.simpleMap.generated) {
                 this.simpleMap.draw(this.ctx, this.mapOffset);
                 this.ecs.update(this.ctx, this)
             }
             //console.log(this.mapOffset)
-            utils.sleep(1000/60).then(()=>this.gameLoop())
+            utils.sleep(1000/60).then(()=>{this.gameLoop()/* ;console.timeEnd("loop") */})
         }
     }
 }
 
 const DIMENSIONS = new Vec2D(innerHeight / 6 * 5);
 const GAME = new Game(DIMENSIONS);
-GAME.init();
 
 addEventListener("click", e => {
     if(e.target == document.getElementById("generateMap")) {
-        GAME.simpleMap.initMap();
+        GAME.init();
     }
 })

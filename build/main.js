@@ -579,13 +579,21 @@ class Game {
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
         this.playerSize = new (0, _utils.Vec2D)(this.canvas.width / 10);
         this.mapDimensions = new (0, _utils.Vec2D)(50);
-        this.mapOffset = new (0, _utils.Vec2D)(-(this.playerSize.x * this.mapDimensions.x / 2));
+        // Position the character in the middle of the map
+        this.mapOffset = new (0, _utils.Vec2D)(this.canvas.width / 2 - this.playerSize.x * this.mapDimensions.x / 2);
     }
     init() {
-        this.simpleMap = new (0, _walker.WalkerGenerator)(this.mapDimensions, this.ctx, 10, 0.4, 0, true, this);
-        this.ecs = new _ecs.ECS();
-        this.initPlayer();
         this.running = true;
+        if (this.simpleMap != undefined && !this.simpleMap.generated) {
+            console.warn("Map is already generating");
+            return;
+        }
+        this.ecs = new _ecs.ECS();
+        console.log(this.ecs.entities);
+        if (!(this.ecs.entities.length > 0)) this.initPlayer();
+        this.simpleMap = new (0, _walker.WalkerGenerator)(this.mapDimensions, this.ctx, 10, 0.4, 0, true, this);
+        this.simpleMap.initMap();
+        //this.generatingMap = true;
         this.gameLoop();
     }
     draw(position, dimensions, image, imgSrcPos, imgSrcDim) {
@@ -601,23 +609,26 @@ class Game {
         ];
         this.ecs.addSystem(new (0, _render.Render)());
         this.ecs.addSystem(new (0, _move.Move)());
+    //console.log(this.ecs)
     }
     gameLoop() {
+        //console.time("loop")
         if (this.running) {
             if (this.simpleMap.generated) {
                 this.simpleMap.draw(this.ctx, this.mapOffset);
                 this.ecs.update(this.ctx, this);
             }
             //console.log(this.mapOffset)
-            _utils.sleep(1000 / 60).then(()=>this.gameLoop());
+            _utils.sleep(1000 / 60).then(()=>{
+                this.gameLoop();
+            /* ;console.timeEnd("loop") */ });
         }
     }
 }
 const DIMENSIONS = new (0, _utils.Vec2D)(innerHeight / 6 * 5);
 const GAME = new Game(DIMENSIONS);
-GAME.init();
 addEventListener("click", (e)=>{
-    if (e.target == document.getElementById("generateMap")) GAME.simpleMap.initMap();
+    if (e.target == document.getElementById("generateMap")) GAME.init();
 });
 
 },{"./utils":"52QlR","./engine/walker":"lWyh1","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH","./ecs/ecs":"96EPF","./ecs/systems/render":"4mhar","./ecs/components":"2B3cB","./ecs/systems/move":"l5LvQ"}],"52QlR":[function(require,module,exports) {
@@ -723,6 +734,7 @@ class WalkerGenerator {
         this.map = [];
         this.walkers = [];
         this.tileCount = 0;
+        this.generated = false;
         // Initialize map
         for(let i = 0; i < this.mapDimensions.x; i++){
             this.map[i] = [];
@@ -767,33 +779,43 @@ class WalkerGenerator {
             let position;
             let dimensions;
             if (this.generated) {
-                position = new (0, _utils.Vec2D)(Math.floor(this.game.playerSize.x * i + mapOffset.x), Math.floor(this.game.playerSize.y * j + mapOffset.y));
-                dimensions = new (0, _utils.Vec2D)(this.game.playerSize.x, this.game.playerSize.y);
+                position = new (0, _utils.Vec2D)(Math.floor(this.game.playerSize.x * i) + mapOffset.x, Math.floor(this.game.playerSize.y * j) + mapOffset.y);
+                dimensions = new (0, _utils.Vec2D)(this.game.playerSize.x + 1, this.game.playerSize.y + 1);
             } else {
                 position = new (0, _utils.Vec2D)(Math.floor(this.game.canvas.width / this.mapDimensions.x * i), Math.floor(this.game.canvas.height / this.mapDimensions.y * j));
                 dimensions = new (0, _utils.Vec2D)(this.game.canvas.width / this.mapDimensions.x, this.game.canvas.height / this.mapDimensions.y);
             }
             // Current tile
             let tile = this.map[i][j];
+            let floorTile = false;
             if ([
                 1,
                 2,
                 3
-            ].includes(tile)) {
-                if (!this.generated) {
+            ].includes(tile)) floorTile = true;
+            // Visualise the map
+            if (!this.generated) {
+                if (floorTile) {
                     this.game.draw(position, dimensions, document.getElementById("tilesheet"), new (0, _utils.Vec2D)(0, 32), new (0, _utils.Vec2D)(32, 32));
                     continue;
+                } else {
+                    this.ctx.fillStyle = "#000";
+                    this.ctx.fillRect(position.x, position.y, dimensions.x, dimensions.y);
                 }
+            }
+            // Check if we should draw the tile
+            if (!(position.x > -dimensions.x && position.x < this.game.canvas.width + dimensions.x && position.y > -dimensions.y && position.y < this.game.canvas.height + dimensions.y && this.generated)) continue;
+            if (floorTile) {
                 if (tile == TileType.FloorEmpty) this.game.draw(position, dimensions, document.getElementById("tilesheet"), new (0, _utils.Vec2D)(0, 32), new (0, _utils.Vec2D)(32, 32));
                 else if (tile == TileType.FloorGrass) this.game.draw(position, dimensions, document.getElementById("tilesheet"), new (0, _utils.Vec2D)(0, 0), new (0, _utils.Vec2D)(32, 32));
                 else if (tile == TileType.FloorFlower) this.game.draw(position, dimensions, document.getElementById("tilesheet"), new (0, _utils.Vec2D)(32, 0), new (0, _utils.Vec2D)(32, 32));
                 continue;
             //this.ctx.fillStyle = "#68b547";
-            } else if (this.map[i][j] == TileType.Sand) {
+            } else if (tile == TileType.Sand) {
                 this.game.draw(position, dimensions, document.getElementById("tilesheet"), new (0, _utils.Vec2D)(32, 32), new (0, _utils.Vec2D)(32, 32));
                 continue;
             //this.ctx.fillStyle = "#bab473";
-            } else if (this.map[i][j] == TileType.Water) this.ctx.fillStyle = "#377";
+            } else if (tile == TileType.Water) this.ctx.fillStyle = "#377";
             else this.ctx.fillStyle = "#000";
             this.game.draw(position, dimensions);
         }
@@ -936,6 +958,7 @@ class SystemManager {
 class Entity {
     constructor(id){
         this.id = id;
+        this.components = [];
     }
     // Get a component by it's name
     getComponent(name) {
@@ -971,7 +994,7 @@ class Render extends (0, _ecs.System) {
             const srcDim = entity.getComponent("image").srcDim;
             const pos = entity.getComponent("position").position;
             const dim = entity.getComponent("dimensions").dimensions;
-            console.log("Rendering entity");
+            //console.log("Rendering entity")
             ctx.drawImage(image, srcPos.x, srcPos.y, srcDim.x, srcDim.y, pos.x, pos.y, dim.x, dim.y);
         });
     }
@@ -1015,26 +1038,30 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Move", ()=>Move);
 var _ecs = require("../ecs");
+var _utils = require("../../utils");
 class Move extends (0, _ecs.System) {
     speed = 3;
     constructor(){
         super([], (_, __, game)=>{
+            this.moveX = 0;
+            this.moveY = 0;
             if (keys["w"] || keys["ArrowUp"]) {
-                if (keys["a"] || keys["ArrowLeft"] || keys["d"] || keys["ArrowRight"]) game.mapOffset.y += Math.sqrt(this.speed);
-                else game.mapOffset.y += this.speed;
+                if (keys["a"] || keys["ArrowLeft"] || keys["d"] || keys["ArrowRight"]) this.moveY += Math.sin(45) * this.speed;
+                else this.moveY += this.speed;
             }
             if (keys["s"] || keys["ArrowDown"]) {
-                if (keys["a"] || keys["ArrowLeft"] || keys["d"] || keys["ArrowRight"]) game.mapOffset.y -= Math.sqrt(this.speed);
-                else game.mapOffset.y -= this.speed;
+                if (keys["a"] || keys["ArrowLeft"] || keys["d"] || keys["ArrowRight"]) this.moveY -= Math.sin(45) * this.speed;
+                else this.moveY -= this.speed;
             }
             if (keys["a"] || keys["ArrowLeft"]) {
-                if (keys["w"] || keys["ArrowUp"] || keys["s"] || keys["ArrowDown"]) game.mapOffset.x += Math.sqrt(this.speed);
-                else game.mapOffset.x += this.speed;
+                if (keys["w"] || keys["ArrowUp"] || keys["s"] || keys["ArrowDown"]) this.moveX += Math.sin(45) * this.speed;
+                else this.moveX += this.speed;
             }
             if (keys["d"] || keys["ArrowRight"]) {
-                if (keys["w"] || keys["ArrowUp"] || keys["s"] || keys["ArrowDown"]) game.mapOffset.x -= Math.sqrt(this.speed);
-                else game.mapOffset.x -= 2;
+                if (keys["w"] || keys["ArrowUp"] || keys["s"] || keys["ArrowDown"]) this.moveX -= Math.sin(45) * this.speed;
+                else this.moveX -= this.speed;
             }
+            game.mapOffset = (0, _utils.Vec2D).add(game.mapOffset, new (0, _utils.Vec2D)(this.moveX, this.moveY));
         });
     }
 }
@@ -1046,5 +1073,5 @@ document.addEventListener("keyup", (e)=>{
     keys[e.key] = false;
 });
 
-},{"../ecs":"96EPF","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}]},["3mPmv","zQOKN"], "zQOKN", "parcelRequire94c2")
+},{"../ecs":"96EPF","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH","../../utils":"52QlR"}]},["3mPmv","zQOKN"], "zQOKN", "parcelRequire94c2")
 

@@ -64,6 +64,7 @@ export class Entity {
     components: Component[];
     constructor(id: number) {
         this.id = id;
+        this.components = [];
     }
     // Get a component by it's name
     getComponent<T extends Component>(name: string): T {

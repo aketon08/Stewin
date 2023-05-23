@@ -56,6 +56,7 @@ export class WalkerGenerator {
         this.map = [];
         this.walkers = [];
         this.tileCount = 0;
+        this.generated = false;
         // Initialize map
         for (let i = 0; i < this.mapDimensions.x; i++) {
             this.map[i] = [];
@@ -70,7 +71,7 @@ export class WalkerGenerator {
 
         if(!this.visualise)
             this.loading();
-        this.tick();
+        this.tick()
     }
     // Tick the map generation
     tick() {
@@ -83,7 +84,7 @@ export class WalkerGenerator {
             this.makeWater(this.ctx);
             this.draw(this.ctx);
             console.log("done");
-            return;
+            return
         }
         // For every walker
         for(let walker of this.walkers) {
@@ -109,16 +110,16 @@ export class WalkerGenerator {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         for (let i = 0; i < this.mapDimensions.x; i++) {
             for (let j = 0; j < this.mapDimensions.y; j++) {
-                let position
-                let dimensions
+                let position: Vec2D
+                let dimensions: Vec2D
                 if(this.generated) {
                     position = new Vec2D(
-                        Math.floor((this.game.playerSize.x * i) + mapOffset.x), 
-                        Math.floor((this.game.playerSize.y * j) + mapOffset.y)
+                        Math.floor((this.game.playerSize.x * i)) + mapOffset.x, 
+                        Math.floor((this.game.playerSize.y * j)) + mapOffset.y
                     );
                     dimensions = new Vec2D(
-                        (this.game.playerSize.x),
-                        (this.game.playerSize.y)
+                        (this.game.playerSize.x + 1),
+                        (this.game.playerSize.y + 1)
                     );
                 } else {
                     position = new Vec2D(
@@ -132,28 +133,41 @@ export class WalkerGenerator {
                 }
                 // Current tile
                 let tile = this.map[i][j];
-                if ([1, 2, 3].includes(tile)) { // 1, 2, 3 correspond to floor tiles
-                    if(!this.generated) {
+                let floorTile = false;
+                if([1, 2, 3].includes(tile)) floorTile = true
+                // Visualise the map
+                if(!this.generated) {
+                    if (floorTile) { // 1, 2, 3 correspond to floor tile variants
                         this.game.draw(position, dimensions, document.getElementById("tilesheet"), new Vec2D(0, 32), new Vec2D(32, 32)) 
                         continue;
+                    } else {
+                        this.ctx.fillStyle = "#000";
+                        this.ctx.fillRect(position.x, position.y, dimensions.x, dimensions.y);
                     }
-                    
-                    if(tile == TileType.FloorEmpty) 
+                }
+                
+                // Check if we should draw the tile
+                if(!(position.x > -dimensions.x && position.x < this.game.canvas.width + dimensions.x && position.y > -dimensions.y && position.y < this.game.canvas.height + dimensions.y && this.generated)) {
+                    continue;
+                }
+                if(floorTile) {
+                    if(tile == TileType.FloorEmpty) {
                         this.game.draw(position, dimensions, document.getElementById("tilesheet"), new Vec2D(0, 32), new Vec2D(32, 32))
-                    else if(tile == TileType.FloorGrass) 
+                    } else if(tile == TileType.FloorGrass) {
                         this.game.draw(position, dimensions, document.getElementById("tilesheet"), new Vec2D(0, 0), new Vec2D(32, 32))
-                    else if(tile == TileType.FloorFlower) 
+                    } else if(tile == TileType.FloorFlower) {
                         this.game.draw(position, dimensions, document.getElementById("tilesheet"), new Vec2D(32, 0), new Vec2D(32, 32))
+                    }
                     continue;
                     //this.ctx.fillStyle = "#68b547";
-                } else if (this.map[i][j] == TileType.Sand) {
+                } else if (tile == TileType.Sand) {
                     this.game.draw(position, dimensions, document.getElementById("tilesheet"), new Vec2D(32, 32), new Vec2D(32, 32));
                     continue;
                     //this.ctx.fillStyle = "#bab473";
-                } else if (this.map[i][j] == TileType.Water) {
+                } else if (tile == TileType.Water) {
                     this.ctx.fillStyle = "#377";
                 } else {
-                    this.ctx.fillStyle = "#000"
+                    this.ctx.fillStyle = "#000";
                 }
                 this.game.draw(position, dimensions)
             }
