@@ -564,7 +564,7 @@ var _utils = require("./utils");
 var _walker = require("./engine/walker");
 var _ecs = require("./ecs/ecs");
 var _render = require("./ecs/systems/render");
-var _move = require("./ecs/systems/move");
+var _playermove = require("./ecs/systems/playermove");
 var _components = require("./ecs/components");
 class Game {
     mapOffset = new (0, _utils.Vec2D)(0, 0);
@@ -572,33 +572,29 @@ class Game {
         this.dimensions = dimensions;
         this.canvas = document.getElementById("canvas");
         this.ctx = this.canvas.getContext("2d");
-        this.ctx.imageSmoothingEnabled = false;
         this.canvas.width = this.dimensions.x;
         this.canvas.height = this.dimensions.y;
         this.ctx.fillStyle = "#000";
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
         this.playerSize = new (0, _utils.Vec2D)(this.canvas.width / 10);
-        this.mapDimensions = new (0, _utils.Vec2D)(50);
-        // Position the character in the middle of the map
-        this.mapOffset = new (0, _utils.Vec2D)(this.canvas.width / 2 - this.playerSize.x * this.mapDimensions.x / 2);
+        this.mapDimensions = new (0, _utils.Vec2D)(20);
+        this.init();
     }
     init() {
-        this.running = true;
-        if (this.simpleMap != undefined && !this.simpleMap.generated) {
-            console.warn("Map is already generating");
-            return;
-        }
         this.ecs = new _ecs.ECS();
-        console.log(this.ecs.entities);
-        if (!(this.ecs.entities.length > 0)) this.initPlayer();
-        this.simpleMap = new (0, _walker.WalkerGenerator)(this.mapDimensions, this.ctx, 10, 0.4, 0, true, this);
-        this.simpleMap.initMap();
-        //this.generatingMap = true;
-        this.gameLoop();
+        this.initAudio();
+        this.initPlayer();
+        this.ctx.imageSmoothingEnabled = false;
     }
-    draw(position, dimensions, image, imgSrcPos, imgSrcDim) {
-        //this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-        image == null ? this.ctx.fillRect(position.x, position.y, dimensions.x, dimensions.y) : this.ctx.drawImage(image, imgSrcPos.x, imgSrcPos.y, imgSrcDim.x, imgSrcDim.y, position.x, position.y, dimensions.x, dimensions.y);
+    initAudio() {
+        this.audio = {
+            title: new Audio("resources/audio/TitleLong.wav")
+        };
+        this.audio.title.loop = true;
+    //console.log(Object.entries(music))
+    }
+    playAudio() {
+        this.audio.title.play();
     }
     initPlayer() {
         this.ecs.addEntity(new (0, _ecs.Entity)(0));
@@ -608,30 +604,49 @@ class Game {
             new (0, _components.DimensionComponent)(this.playerSize)
         ];
         this.ecs.addSystem(new (0, _render.Render)());
-        this.ecs.addSystem(new (0, _move.Move)());
-    //console.log(this.ecs)
+        this.ecs.addSystem(new (0, _playermove.MovePlayer)());
+    }
+    generateMap() {
+        if (this.simpleMap != undefined && !this.simpleMap.generated) {
+            console.warn("Map is already generating");
+            return;
+        }
+        this.running = false;
+        this.simpleMap = new (0, _walker.WalkerGenerator)(this.mapDimensions, this.ctx, 10, 0.4, 0, true, this);
+        this.simpleMap.initMap();
+        this.mapOffset = new (0, _utils.Vec2D)(this.canvas.width / 2 - this.playerSize.x * this.mapDimensions.x / 2);
+        let run = setInterval(()=>{
+            if (this.simpleMap.generated) {
+                this.running = true;
+                this.gameLoop();
+                clearInterval(run);
+            }
+        }, 100);
+    }
+    draw(position, dimensions, image, imgSrcPos, imgSrcDim) {
+        //this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        image == null ? this.ctx.fillRect(position.x, position.y, dimensions.x, dimensions.y) : this.ctx.drawImage(image, imgSrcPos.x, imgSrcPos.y, imgSrcDim.x, imgSrcDim.y, position.x, position.y, dimensions.x, dimensions.y);
     }
     gameLoop() {
-        //console.time("loop")
-        if (this.running) {
+        /* console.time("loop") */ if (this.running) {
             if (this.simpleMap.generated) {
                 this.simpleMap.draw(this.ctx, this.mapOffset);
                 this.ecs.update(this.ctx, this);
             }
-            //console.log(this.mapOffset)
             _utils.sleep(1000 / 60).then(()=>{
-                this.gameLoop();
-            /* ;console.timeEnd("loop") */ });
+                this.gameLoop(); /*console.timeEnd("loop")*/ 
+            });
         }
     }
 }
 const DIMENSIONS = new (0, _utils.Vec2D)(innerHeight / 6 * 5);
 const GAME = new Game(DIMENSIONS);
 addEventListener("click", (e)=>{
-    if (e.target == document.getElementById("generateMap")) GAME.init();
+    if (e.target == document.getElementById("generateMap")) GAME.generateMap();
+    GAME.audio.title.play();
 });
 
-},{"./utils":"52QlR","./engine/walker":"lWyh1","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH","./ecs/ecs":"96EPF","./ecs/systems/render":"4mhar","./ecs/components":"2B3cB","./ecs/systems/move":"l5LvQ"}],"52QlR":[function(require,module,exports) {
+},{"./utils":"52QlR","./engine/walker":"lWyh1","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH","./ecs/ecs":"96EPF","./ecs/systems/render":"4mhar","./ecs/components":"2B3cB","./ecs/systems/playermove":"4nnHI"}],"52QlR":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2D", ()=>Vec2D);
@@ -1033,18 +1048,19 @@ class DimensionComponent extends Component {
     }
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"l5LvQ":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"4nnHI":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Move", ()=>Move);
+parcelHelpers.export(exports, "MovePlayer", ()=>MovePlayer);
 var _ecs = require("../ecs");
 var _utils = require("../../utils");
-class Move extends (0, _ecs.System) {
+class MovePlayer extends (0, _ecs.System) {
     speed = 3;
     constructor(){
         super([], (_, __, game)=>{
             this.moveX = 0;
             this.moveY = 0;
+            // Key checking
             if (keys["w"] || keys["ArrowUp"]) {
                 if (keys["a"] || keys["ArrowLeft"] || keys["d"] || keys["ArrowRight"]) this.moveY += Math.sin(45) * this.speed;
                 else this.moveY += this.speed;
@@ -1061,6 +1077,24 @@ class Move extends (0, _ecs.System) {
                 if (keys["w"] || keys["ArrowUp"] || keys["s"] || keys["ArrowDown"]) this.moveX -= Math.sin(45) * this.speed;
                 else this.moveX -= this.speed;
             }
+            //Bounds checking
+            if (game.mapOffset.x >= 0) {
+                game.mapOffset.x = 0;
+                this.moveX = this.moveX > 0 ? 0 : this.moveX;
+            }
+            if (game.mapOffset.x <= -Math.floor(game.mapDimensions.x * game.playerSize.x - game.canvas.width)) {
+                game.mapOffset.x = -Math.floor(game.mapDimensions.x * game.playerSize.x - game.canvas.width);
+                this.moveX = this.moveX < 0 ? 0 : this.moveX;
+            }
+            if (game.mapOffset.y >= 0) {
+                game.mapOffset.y = 0;
+                this.moveY = this.moveY > 0 ? 0 : this.moveY;
+            }
+            if (game.mapOffset.y <= -Math.floor(game.mapDimensions.y * game.playerSize.y - game.canvas.height)) {
+                game.mapOffset.y = -Math.floor(game.mapDimensions.y * game.playerSize.y - game.canvas.height);
+                this.moveY = this.moveY < 0 ? 0 : this.moveY;
+            }
+            // game.mapOffset.x >= -1 ? this.moveX > 0 ? 0 : this.moveX : game.mapOffset.x <= -Math.floor((game.mapDimensions.x*game.playerSize.x)-game.canvas.width) ? this.moveX < 0 ? 0 : this.moveX : this.moveX;
             game.mapOffset = (0, _utils.Vec2D).add(game.mapOffset, new (0, _utils.Vec2D)(this.moveX, this.moveY));
         });
     }
@@ -1073,5 +1107,5 @@ document.addEventListener("keyup", (e)=>{
     keys[e.key] = false;
 });
 
-},{"../ecs":"96EPF","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH","../../utils":"52QlR"}]},["3mPmv","zQOKN"], "zQOKN", "parcelRequire94c2")
+},{"../ecs":"96EPF","../../utils":"52QlR","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}]},["3mPmv","zQOKN"], "zQOKN", "parcelRequire94c2")
 
