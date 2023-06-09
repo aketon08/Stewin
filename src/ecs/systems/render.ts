@@ -1,13 +1,17 @@
+/* render.ts
+    * Purpose: Renders an entity to the screen
+*/
+
 import { System } from "../ecs";
 import * as cs from "../components"     // cs = components
 
 export class Render extends System {
     constructor() {
         super([
-            cs.ImageComponent, 
+            cs.ImageComponent,
             cs.PositionComponent,
             cs.DimensionComponent
-        ], (entity, ctx) => {
+        ], "render", (entity, ctx) => {
             const image = entity.getComponent<cs.ImageComponent>("image").image;
             const srcPos = entity.getComponent<cs.ImageComponent>("image").srcPos;
             const srcDim = entity.getComponent<cs.ImageComponent>("image").srcDim;

@@ -34,3 +34,12 @@ export class DimensionComponent extends Component {
         this.dimensions = dimensions;
     }
 }
+
+export class AudioComponent extends Component {
+    audio: HTMLAudioElement;
+    constructor(audio: HTMLAudioElement, loop: boolean) {
+        super("audio");
+        this.audio = audio;
+        this.audio.loop = loop;
+    }
+}
