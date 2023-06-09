@@ -557,7 +557,9 @@ function hmrAccept(bundle, id) {
 }
 
 },{}],"zQOKN":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+/* main.ts
+    * Purpose: Main game file
+*/ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Game", ()=>Game);
 var _utils = require("./utils");
@@ -565,6 +567,7 @@ var _walker = require("./engine/walker");
 var _ecs = require("./ecs/ecs");
 var _render = require("./ecs/systems/render");
 var _playermove = require("./ecs/systems/playermove");
+var _audio = require("./ecs/systems/audio"); // this has to be imported like this because of the js Audio class
 var _components = require("./ecs/components");
 class Game {
     mapOffset = new (0, _utils.Vec2D)(0, 0);
@@ -577,7 +580,8 @@ class Game {
         this.ctx.fillStyle = "#000";
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
         this.playerSize = new (0, _utils.Vec2D)(this.canvas.width / 10);
-        this.mapDimensions = new (0, _utils.Vec2D)(20);
+        this.mapDimensions = new (0, _utils.Vec2D)(40);
+        this.running = false;
         this.init();
     }
     init() {
@@ -587,22 +591,17 @@ class Game {
         this.ctx.imageSmoothingEnabled = false;
     }
     initAudio() {
-        this.audio = {
-            title: new Audio("resources/audio/TitleLong.wav")
-        };
-        this.audio.title.loop = true;
-    //console.log(Object.entries(music))
-    }
-    playAudio() {
-        this.audio.title.play();
+        this.ecs.addEntity(new (0, _ecs.Entity)(this.ecs.entities.length), [
+            new (0, _components.AudioComponent)(new Audio("resources/audio/TitleLong.wav"), true)
+        ]);
+        this.ecs.addSystem(new _audio.Audio());
     }
     initPlayer() {
-        this.ecs.addEntity(new (0, _ecs.Entity)(0));
-        this.ecs.entities[0].components = [
+        this.ecs.addEntity(new (0, _ecs.Entity)(0), [
             new (0, _components.ImageComponent)(document.getElementById("spritesheet"), new _utils.Vec2D(0, 64), new _utils.Vec2D(32, 32)),
             new (0, _components.PositionComponent)(new _utils.Vec2D(this.canvas.width / 2 - this.playerSize.x / 2, this.canvas.height / 2 - this.playerSize.y / 2)),
             new (0, _components.DimensionComponent)(this.playerSize)
-        ];
+        ]);
         this.ecs.addSystem(new (0, _render.Render)());
         this.ecs.addSystem(new (0, _playermove.MovePlayer)());
     }
@@ -618,6 +617,8 @@ class Game {
         let run = setInterval(()=>{
             if (this.simpleMap.generated) {
                 this.running = true;
+                this.ecs.addTrigger("render");
+                this.ecs.addTrigger("move");
                 this.gameLoop();
                 clearInterval(run);
             }
@@ -643,10 +644,10 @@ const DIMENSIONS = new (0, _utils.Vec2D)(innerHeight / 6 * 5);
 const GAME = new Game(DIMENSIONS);
 addEventListener("click", (e)=>{
     if (e.target == document.getElementById("generateMap")) GAME.generateMap();
-    GAME.audio.title.play();
+    GAME.ecs.addTrigger("audio");
 });
 
-},{"./utils":"52QlR","./engine/walker":"lWyh1","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH","./ecs/ecs":"96EPF","./ecs/systems/render":"4mhar","./ecs/components":"2B3cB","./ecs/systems/playermove":"4nnHI"}],"52QlR":[function(require,module,exports) {
+},{"./utils":"52QlR","./engine/walker":"lWyh1","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH","./ecs/ecs":"96EPF","./ecs/systems/render":"4mhar","./ecs/components":"2B3cB","./ecs/systems/playermove":"4nnHI","./ecs/systems/audio":"5WjCh"}],"52QlR":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2D", ()=>Vec2D);
@@ -708,7 +709,9 @@ exports.export = function(dest, destName, get) {
 };
 
 },{}],"lWyh1":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+/* walker.ts
+    * Purpose: Generates a map using a walker algorithm
+*/ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "TileType", ()=>TileType);
 parcelHelpers.export(exports, "WalkerGenerator", ()=>WalkerGenerator);
@@ -722,10 +725,7 @@ let TileType;
     TileType[TileType["Sand"] = 4] = "Sand";
     TileType[TileType["Water"] = 5] = "Water";
 })(TileType || (TileType = {}));
-// Sleep function, takes in ms to sleep for
-/* const sleep = (ms) => {
-    return new Promise(resolve => setTimeout(resolve, ms));
-} */ class WalkerObject {
+class WalkerObject {
     constructor(position, direction, chanceToChange){
         this.position = position;
         this.direction = direction;
@@ -769,8 +769,10 @@ class WalkerGenerator {
         if (this.tileCount / (this.mapDimensions.x * this.mapDimensions.y) >= this.fillPercentage) {
             this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
             this.generated = true;
-            this.makeSand(this.ctx);
-            this.makeWater(this.ctx);
+            for(let i = 0; i < this.mapDimensions.x; i++)for(let j = 0; j < this.mapDimensions.y; j++){
+                this.map[i][j] = this.makeSand(this.ctx, new (0, _utils.Vec2D)(i, j)) ? TileType.Sand : this.map[i][j];
+                this.map[i][j] = this.makeWater(this.ctx, this.map[i][j]) ? TileType.Water : this.map[i][j];
+            }
             this.draw(this.ctx);
             console.log("done");
             return;
@@ -786,7 +788,7 @@ class WalkerGenerator {
         if (this.visualise) this.draw(this.ctx);
         _utils.sleep(this.waitTime).then(()=>this.tick());
     }
-    // Draw the map
+    // Draw the map to the canvas
     draw(ctx, mapOffset = new (0, _utils.Vec2D)(0, 0)) {
         //console.log("draw")
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -807,7 +809,8 @@ class WalkerGenerator {
                 1,
                 2,
                 3
-            ].includes(tile)) floorTile = true;
+            ].includes(tile)) floorTile = true // 1, 2, 3 correspond to floor tile variants
+            ;
             // Visualise the map
             if (!this.generated) {
                 if (floorTile) {
@@ -847,18 +850,15 @@ class WalkerGenerator {
             }
         }
     }
-    makeSand(ctx) {
+    // Make a sand tile after generating
+    makeSand(ctx, tile) {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        /* let add = (lhs, rhs) => {return lhs + rhs} */ for(let i = 0; i < this.mapDimensions.x; i++)for(let j = 0; j < this.mapDimensions.y; j++){
-            if (this.map[i][j] != TileType.Empty) continue;
-            if (this.checkSurroundingTiles(i, j)) this.map[i][j] = TileType.Sand;
-        }
+        /* let add = (lhs, rhs) => {return lhs + rhs} */ if (this.map[tile.x][tile.y] == TileType.Empty && this.checkSurroundingTiles(tile.x, tile.y)) return true;
     }
-    makeWater(ctx) {
+    // Make a water tile after generating
+    makeWater(ctx, tile) {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        for(let i = 0; i < this.mapDimensions.x; i++){
-            for(let j = 0; j < this.mapDimensions.y; j++)if (this.map[i][j] == TileType.Empty) this.map[i][j] = TileType.Water;
-        }
+        if (tile == TileType.Empty) return true;
     }
     // Create a floor tile at the given position
     createRandomFloorTile(position, constraints) {
@@ -925,17 +925,23 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ECS", ()=>ECS);
 parcelHelpers.export(exports, "Entity", ()=>Entity);
+// Systems have an array of components, which run on entities with the same components
 parcelHelpers.export(exports, "System", ()=>System);
 class ECS {
     constructor(){
         this.entities = [];
         this.systemManager = new SystemManager();
     }
-    addEntity(entity) {
+    addEntity(entity, components) {
         this.entities.push(entity);
+        components != null && (entity.components = components);
     }
     addSystem(system) {
         this.systemManager.systems.push(system);
+    }
+    addTrigger(trigger) {
+        if (this.systemManager.triggers.includes(trigger)) return;
+        this.systemManager.addTrigger(trigger);
     }
     update(ctx, game) {
         this.systemManager.updateSystems(this.entities, ctx, game);
@@ -944,15 +950,26 @@ class ECS {
 class SystemManager {
     constructor(){
         this.systems = [];
+        this.triggers = [];
     }
     // Add a system to the system manager
     addSystem(system) {
         this.systems.push(system);
     }
+    // Add a trigger
+    addTrigger(trigger) {
+        this.triggers.push(trigger);
+        console.log(this.triggers);
+    }
+    // Remove a trigger
+    removeTrigger(trigger) {
+        this.triggers.splice(this.triggers.indexOf(trigger), 1);
+    }
     // Run all systems on all entities, if the entities have the required components
     updateSystems(entities, ctx, game) {
         for(let i = 0; i < this.systems.length; i++){
             const system = this.systems[i];
+            if (!this.triggers.includes(system.trigger)) continue; // Skip if the system's trigger is not active
             for(let j = 0; j < entities.length; j++){
                 const entity = entities[j];
                 // console.log("Updating systems")
@@ -985,14 +1002,17 @@ class Entity {
     }
 }
 class System {
-    constructor(components, func){
+    constructor(components, trigger, func){
         this.components = components;
+        this.trigger = trigger;
         this.func = func;
     }
 }
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"4mhar":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+/* render.ts
+    * Purpose: Renders an entity to the screen
+*/ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Render", ()=>Render);
 var _ecs = require("../ecs");
@@ -1003,7 +1023,7 @@ class Render extends (0, _ecs.System) {
             _components.ImageComponent,
             _components.PositionComponent,
             _components.DimensionComponent
-        ], (entity, ctx)=>{
+        ], "render", (entity, ctx)=>{
             const image = entity.getComponent("image").image;
             const srcPos = entity.getComponent("image").srcPos;
             const srcDim = entity.getComponent("image").srcDim;
@@ -1022,6 +1042,7 @@ parcelHelpers.export(exports, "Component", ()=>Component);
 parcelHelpers.export(exports, "ImageComponent", ()=>ImageComponent);
 parcelHelpers.export(exports, "PositionComponent", ()=>PositionComponent);
 parcelHelpers.export(exports, "DimensionComponent", ()=>DimensionComponent);
+parcelHelpers.export(exports, "AudioComponent", ()=>AudioComponent);
 class Component {
     constructor(name){
         this.name = name;
@@ -1047,6 +1068,13 @@ class DimensionComponent extends Component {
         this.dimensions = dimensions;
     }
 }
+class AudioComponent extends Component {
+    constructor(audio, loop){
+        super("audio");
+        this.audio = audio;
+        this.audio.loop = loop;
+    }
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"4nnHI":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -1055,9 +1083,9 @@ parcelHelpers.export(exports, "MovePlayer", ()=>MovePlayer);
 var _ecs = require("../ecs");
 var _utils = require("../../utils");
 class MovePlayer extends (0, _ecs.System) {
-    speed = 3;
+    speed = 1;
     constructor(){
-        super([], (_, __, game)=>{
+        super([], "move", (_, __, game)=>{
             this.moveX = 0;
             this.moveY = 0;
             // Key checking
@@ -1077,7 +1105,7 @@ class MovePlayer extends (0, _ecs.System) {
                 if (keys["w"] || keys["ArrowUp"] || keys["s"] || keys["ArrowDown"]) this.moveX -= Math.sin(45) * this.speed;
                 else this.moveX -= this.speed;
             }
-            //Bounds checking
+            // Bounds checking
             if (game.mapOffset.x >= 0) {
                 game.mapOffset.x = 0;
                 this.moveX = this.moveX > 0 ? 0 : this.moveX;
@@ -1107,5 +1135,25 @@ document.addEventListener("keyup", (e)=>{
     keys[e.key] = false;
 });
 
-},{"../ecs":"96EPF","../../utils":"52QlR","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}]},["3mPmv","zQOKN"], "zQOKN", "parcelRequire94c2")
+},{"../ecs":"96EPF","../../utils":"52QlR","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"5WjCh":[function(require,module,exports) {
+/* audio.ts
+    * Purpose: Plays audio
+*/ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Audio", ()=>Audio);
+var _ecs = require("../ecs");
+var _components = require("../components");
+class Audio extends (0, _ecs.System) {
+    constructor(){
+        super([
+            (0, _components.AudioComponent)
+        ], "audio", (entity)=>{
+            this.audio = entity.getComponent("audio").audio;
+            this.audio.play();
+        });
+    }
+    play() {}
+}
+
+},{"../ecs":"96EPF","../components":"2B3cB","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}]},["3mPmv","zQOKN"], "zQOKN", "parcelRequire94c2")
 
