@@ -1,22 +1,22 @@
 {
-    "name": "the_adventures_of_stewin",
-    "author": "Maxwell Robati",
-    "version": "0.0.0",
-    "license": "MIT",
-    "source": "src/main.ts",
-    "targets": {
-      "bundle": {
-        "sourceMap": false,
-        "optimize": true,
-        "outputFormat": "commonjs",
-        "distDir": "build"
-      }
-    },
-    "scripts": {
-      "watch": "parcel watch",
-      "build": "parcel build --no-cache"
-    },
-    "dependencies": {
-      "parcel": "latest"
+  "name": "the_adventures_of_stewin",
+  "author": "Maxwell Robati",
+  "version": "0.1.0",
+  "license": "MIT",
+  "source": "src/main.ts",
+  "targets": {
+    "bundle": {
+      "sourceMap": false,
+      "optimize": true,
+      "outputFormat": "commonjs",
+      "distDir": "build"
     }
+  },
+  "scripts": {
+    "watch": "parcel watch",
+    "build": "parcel build --no-cache"
+  },
+  "dependencies": {
+    "parcel": "latest"
   }
+}

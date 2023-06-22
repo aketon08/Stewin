@@ -1,9 +1,20 @@
+/* components.ts
+    * All ECS components
+*/
+
 import * as utils from "../utils";
 
 export abstract class Component {
     name: string;
     constructor(name: string) {
         this.name = name;
+    }
+}
+
+export class MoveComponent extends Component {
+    speed: number;
+    constructor() {
+        super("move");
     }
 }
 
@@ -32,14 +43,5 @@ export class DimensionComponent extends Component {
     constructor(dimensions: utils.Vec2D) {
         super("dimensions");
         this.dimensions = dimensions;
-    }
-}
-
-export class AudioComponent extends Component {
-    audio: HTMLAudioElement;
-    constructor(audio: HTMLAudioElement, loop: boolean) {
-        super("audio");
-        this.audio = audio;
-        this.audio.loop = loop;
     }
 }

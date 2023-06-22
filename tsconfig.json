@@ -5,7 +5,12 @@
             "es2020",
             "DOM"
         ],
-        "outDir": "build"
+        "outDir": "build",
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "esModuleInterop": true
     },
-    "include": ["src/**/*"]
+    "include": [
+        "src/**/*"
+    ],
 }

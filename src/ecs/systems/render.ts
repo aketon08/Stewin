@@ -1,5 +1,5 @@
 /* render.ts
-    * Purpose: Renders an entity to the screen
+    * Renders an entity to the screen
 */
 
 import { System } from "../ecs";

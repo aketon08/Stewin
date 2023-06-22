@@ -40,13 +40,13 @@ export class WalkerGenerator {
     generated: boolean;
     game: Game;
     floorConstraints: Vec2D = new Vec2D(0.1, 0.25); // Chances to create a flower and grass floor tile, as opposed to an empty one.
-    constructor(mapDimensions: Vec2D, ctx: CanvasRenderingContext2D, maxWalkers: number, fillPercentage: number, waitTime: number, visualise: boolean = false, game: Game) {
+    constructor(mapDimensions: Vec2D, ctx: CanvasRenderingContext2D, maxWalkers: number, fillPercentage: number, visualise: boolean, waitTime: number, game: Game) {
         this.mapDimensions = mapDimensions;
         this.maxWalkers = maxWalkers;
         this.fillPercentage = fillPercentage;
+        this.visualise = visualise;
         this.waitTime = waitTime;
         this.ctx = ctx;
-        this.visualise = visualise;
         this.generated = false;
         this.game = game;
     }
@@ -64,12 +64,12 @@ export class WalkerGenerator {
             }
         }
         // Initial walker
-        this.walkers.push(new WalkerObject(new Vec2D(Math.floor(this.mapDimensions.x / 2), Math.floor(this.mapDimensions.y / 2)), Direction2D.getRandomDirection(), 0.5));
+        this.walkers.push(new WalkerObject(new Vec2D(Math.floor(this.mapDimensions.x / 2), Math.floor(this.mapDimensions.y / 2)), Direction2D.getRandomDirection(), 0.55));
         let curWalker = this.walkers[0];
         this.createRandomFloorTile(curWalker.position, this.floorConstraints);
 
-        if (!this.visualise)
-            this.loading();
+        if (this.visualise)
+            this.draw(this.ctx);
         this.tick()
     }
     // Tick the map generation
@@ -81,12 +81,12 @@ export class WalkerGenerator {
             this.generated = true;
             for (let i = 0; i < this.mapDimensions.x; i++) {
                 for (let j = 0; j < this.mapDimensions.y; j++) {
-                    this.map[i][j] = this.makeSand(this.ctx, new Vec2D(i, j)) ? TileType.Sand : this.map[i][j];
-                    this.map[i][j] = this.makeWater(this.ctx, this.map[i][j]) ? TileType.Water : this.map[i][j];
+                    this.map[i][j] = this.makeSand(new Vec2D(i, j)) ? TileType.Sand : this.map[i][j];
+                    this.map[i][j] = this.makeWater(this.map[i][j]) ? TileType.Water : this.map[i][j];
                 }
             }
             this.draw(this.ctx);
-            console.log("done");
+            console.log("%cFinished generating map.   src: engine/walker.ts:89", "color: #44ee66;font-size: 1.5em;font-family: 'Roboto Mono', monospace;");
             return
         }
         // For every walker
@@ -126,8 +126,8 @@ export class WalkerGenerator {
                     );
                 } else {
                     position = new Vec2D(
-                        Math.floor((this.game.canvas.width / this.mapDimensions.x * i)),
-                        Math.floor((this.game.canvas.height / this.mapDimensions.y * j))
+                        Math.floor((this.game.canvas.width / this.mapDimensions.x) * i),
+                        Math.floor((this.game.canvas.height / this.mapDimensions.y) * j)
                     );
                     dimensions = new Vec2D(
                         (this.game.canvas.width / this.mapDimensions.x),
@@ -141,11 +141,11 @@ export class WalkerGenerator {
                 // Visualise the map
                 if (!this.generated) {
                     if (floorTile) {
-                        this.game.draw(position, dimensions, document.getElementById("tilesheet"), new Vec2D(0, 32), new Vec2D(32, 32))
+                        this.game.draw(position, dimensions, this.game.assets[1], new Vec2D(0, 32), new Vec2D(32, 32))
                         continue;
                     } else {
                         this.ctx.fillStyle = "#000";
-                        this.ctx.fillRect(position.x, position.y, dimensions.x, dimensions.y);
+                        this.ctx.fillRect(position.x, position.y, dimensions.x + 10, dimensions.y + 10);
                     }
                 }
 
@@ -155,16 +155,16 @@ export class WalkerGenerator {
                 }
                 if (floorTile) {
                     if (tile == TileType.FloorEmpty) {
-                        this.game.draw(position, dimensions, document.getElementById("tilesheet"), new Vec2D(0, 32), new Vec2D(32, 32))
+                        this.game.draw(position, dimensions, this.game.assets[1], new Vec2D(0, 32), new Vec2D(32, 32))
                     } else if (tile == TileType.FloorGrass) {
-                        this.game.draw(position, dimensions, document.getElementById("tilesheet"), new Vec2D(0, 0), new Vec2D(32, 32))
+                        this.game.draw(position, dimensions, this.game.assets[1], new Vec2D(0, 0), new Vec2D(32, 32))
                     } else if (tile == TileType.FloorFlower) {
-                        this.game.draw(position, dimensions, document.getElementById("tilesheet"), new Vec2D(32, 0), new Vec2D(32, 32))
+                        this.game.draw(position, dimensions, this.game.assets[1], new Vec2D(32, 0), new Vec2D(32, 32))
                     }
                     continue;
                     //this.ctx.fillStyle = "#68b547";
                 } else if (tile == TileType.Sand) {
-                    this.game.draw(position, dimensions, document.getElementById("tilesheet"), new Vec2D(32, 32), new Vec2D(32, 32));
+                    this.game.draw(position, dimensions, this.game.assets[1], new Vec2D(32, 32), new Vec2D(32, 32));
                     continue;
                     //this.ctx.fillStyle = "#bab473";
                 } else if (tile == TileType.Water) {
@@ -189,16 +189,13 @@ export class WalkerGenerator {
         }
     }
     // Make a sand tile after generating
-    makeSand(ctx: CanvasRenderingContext2D, tile: Vec2D): boolean {
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        /* let add = (lhs, rhs) => {return lhs + rhs} */
+    makeSand(tile: Vec2D): boolean {
         if (this.map[tile.x][tile.y] == TileType.Empty && this.checkSurroundingTiles(tile.x, tile.y)) {
             return true
         }
     }
     // Make a water tile after generating
-    makeWater(ctx: CanvasRenderingContext2D, tile: number): boolean {
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    makeWater(tile: number): boolean {
         if (tile == TileType.Empty) {
             return true
         }
@@ -263,13 +260,5 @@ export class WalkerGenerator {
             }
         }
     }
-    // Loading screen
-    loading(): void {
-        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-        this.ctx.fillStyle = "#000";
-        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-        this.ctx.font = "30px Roboto Mono";
-        this.ctx.fillStyle = "#cbb";
-        this.ctx.fillText("Generating map...", 25, 50);
-    }
+
 }

@@ -1,6 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;500&display=swap');
+
 canvas {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+}
+
+#menu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    height: 600px;
+}
+
+.button {
+    position: absolute;
+    display: block;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 40px;
+    color: black;
+    text-shadow: 2px 2px 4px #000000;
+    border: 2px solid black;
+    cursor: pointer;
+    text-align: center;
+}
+
+#start {
+    top: 33%;
+    width: 100%;
+}
+
+#info.button {
+    top: 66%;
+    width: 100%;
+}
+
+#info.text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 20px;
+    color: black;
+    text-shadow: 2px 2px 4px #000000;
+    text-align: center;
+}
+
+a {
+    text-decoration: underline;
+    color: rgb(50, 64, 187);
+    cursor: pointer;
+}
+
+a:hover {
+    color: rgb(20, 38, 200);
+}
+
+#back {
+    position: absolute;
+    top: -2vh;
+    left: -11.4vh;
+}
+
+#info.info {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    height: 600px;
 }
