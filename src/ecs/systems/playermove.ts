@@ -76,20 +76,15 @@ export class MovePlayer extends System {
                 // If holding opposite direction key, cancel
                 moving[i] ? moving[(i + 2) % 4] ? (moving[i] = false, moving[(i + 2) % 4] = false) : null : null;
                 i == 0 ? moving[i] ? moving[i + 1] || moving[i + 3] ? (moving[i + 1] = false, moving[i + 3] = false) : null : null :
-                    //its not illegal to think im have fat butt
                     i == 2 ? moving[i] ? moving[i - 1] || moving[i + 1] ? (moving[i - 1] = false, moving[i + 1] = false) : null : null : null;
             }
 
             // Set the direction of the player to the truthy value
             let moveDir = moving.indexOf(true)
 
-
-            moveDir = moveDir == -1 ? 2 : moveDir;
-
-            //console.log(moveDir)
-
             if (!moving.every(move => move === false)) {
                 // set the sprite row to the direction
+                this.frame.y = moveDir;
                 // every 12 frames
                 if (game.frames % 12 == 0) {
                     switch (moveDir) {
@@ -109,7 +104,6 @@ export class MovePlayer extends System {
                     }
                 }
             } else this.frame.x = 0
-            this.frame.y = moveDir;
             game.ecs.entities[0].setComponent(new ImageComponent(game.assets[0], Vec2D.multiply(this.frame, null, 32), new Vec2D(32)))
             // game.mapOffset.x >= -1 ? this.moveX > 0 ? 0 : this.moveX : game.mapOffset.x <= -Math.floor((game.mapDimensions.x*game.playerSize.x)-game.canvas.width) ? this.moveX < 0 ? 0 : this.moveX : this.moveX;
             game.mapOffset = Vec2D.add(game.mapOffset, new Vec2D(this.moveX, this.moveY))
