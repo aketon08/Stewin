@@ -104,7 +104,7 @@ export class MovePlayer extends System {
                     }
                 }
             } else this.frame.x = 0
-            game.ecs.entities[0].setComponent(new ImageComponent(game.assets[0], Vec2D.multiply(this.frame, null, 32), new Vec2D(32)))
+            game.ecs.entities[0].setComponent(new ImageComponent(game.assets.images[0], Vec2D.multiply(this.frame, null, 32), new Vec2D(32)))
             // game.mapOffset.x >= -1 ? this.moveX > 0 ? 0 : this.moveX : game.mapOffset.x <= -Math.floor((game.mapDimensions.x*game.playerSize.x)-game.canvas.width) ? this.moveX < 0 ? 0 : this.moveX : this.moveX;
             game.mapOffset = Vec2D.add(game.mapOffset, new Vec2D(this.moveX, this.moveY))
         })

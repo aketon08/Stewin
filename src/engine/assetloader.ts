@@ -33,7 +33,16 @@ export class AssetLoader {
             }
         });
     }
-    async loadAssets(): Promise<(HTMLImageElement | HTMLAudioElement)[]> {
-        return await Promise.all(this.#assets.map(asset => this.loadAsset(asset)));
+    async loadAssets(): Promise<{ images: HTMLImageElement[], audio: HTMLAudioElement[] }> {
+        const ASSETS = await Promise.all(this.#assets.map(asset => this.loadAsset(asset)));
+        let images = [], audio = [];
+        ASSETS.forEach(asset => {
+            if (asset.tagName == "IMG") {
+                images.push(asset);
+            } else if (asset.tagName == "AUDIO") {
+                audio.push(asset);
+            }
+        })
+        return { images: images, audio: audio };
     }
 }
