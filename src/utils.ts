@@ -26,7 +26,7 @@ export class Vec2D<Type = number> {
 }
 
 export class Direction2D {
-    private static cardinalDirections: Vec2D<number>[] = [new Vec2D(0, 1), new Vec2D(0, -1), new Vec2D(1, 0), new Vec2D(-1, 0)]
+    static cardinalDirections: Vec2D<number>[] = [new Vec2D(0, 1), new Vec2D(0, -1), new Vec2D(1, 0), new Vec2D(-1, 0)]
 
     static getRandomDirection(): Vec2D<number> {
         return this.cardinalDirections[Math.ceil((Math.random() * 4) - 1)]

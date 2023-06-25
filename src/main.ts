@@ -66,7 +66,7 @@ export class Game {
         this.initECS().then(
             () => this.generateMap().then(
                 () => {
-                    this.mapOffset = new Vec2D((this.canvas.width / 2) - ((this.playerSize.x * this.mapDimensions.x) / 2))
+                    this.mapOffset = new Vec2D((this.canvas.width / 2) - ((this.map.tileSize.x * this.mapDimensions.x) / 2))
                 }
             )
         )
@@ -99,7 +99,7 @@ export class Game {
                 return;
             }
 
-            this.map = new MapGenerator(this.mapDimensions, this.ctx, 100, 0.4, this.visualiseMap, 0, this);
+            this.map = new MapGenerator(this.mapDimensions, this.ctx, 100, 0.4, this.visualiseMap, 0, this, new Vec2D(this.playerSize.x / 1.5, this.playerSize.y / 1.5));
 
             this.map.initMap()
             let run = setInterval(() => {
@@ -213,7 +213,7 @@ let ASSETS: { images: HTMLImageElement[], audio: HTMLAudioElement[] }, DIMENSION
     console.log("%cDonate to my patreon: " + location.href.split('/').slice(0, -1).join('/') + '/patreon.html', style) // Based on a true story
     ASSETS = await assetLoader.loadAssets();
     DIMENSIONS = new Vec2D(innerHeight / 6 * 5);
-    GAME = new Game(DIMENSIONS, ASSETS, true)
+    GAME = new Game(DIMENSIONS, ASSETS)
     GAME.tick()
 })();
 

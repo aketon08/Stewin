@@ -604,7 +604,7 @@ class Game {
         this.stop = false;
         this.mapDimensions = new (0, _utils.Vec2D)(16);
         this.initECS().then(()=>this.generateMap().then(()=>{
-                this.mapOffset = new (0, _utils.Vec2D)(this.canvas.width / 2 - this.playerSize.x * this.mapDimensions.x / 2);
+                this.mapOffset = new (0, _utils.Vec2D)(this.canvas.width / 2 - this.map.tileSize.x * this.mapDimensions.x / 2);
             }));
     }
     // Initialize ECS and the player entity
@@ -630,7 +630,7 @@ class Game {
                 console.warn("Map is already generating");
                 return;
             }
-            this.map = new (0, _map.MapGenerator)(this.mapDimensions, this.ctx, 100, 0.4, this.visualiseMap, 0, this);
+            this.map = new (0, _map.MapGenerator)(this.mapDimensions, this.ctx, 100, 0.4, this.visualiseMap, 0, this, new (0, _utils.Vec2D)(this.playerSize.x / 1.5, this.playerSize.y / 1.5));
             this.map.initMap();
             let run = setInterval(()=>{
                 if (this.map.generated) {
@@ -749,7 +749,7 @@ let ASSETS, DIMENSIONS, GAME;
     ;
     ASSETS = await assetLoader.loadAssets();
     DIMENSIONS = new (0, _utils.Vec2D)(innerHeight / 6 * 5);
-    GAME = new Game(DIMENSIONS, ASSETS, true);
+    GAME = new Game(DIMENSIONS, ASSETS);
     GAME.tick();
 })();
 window.addEventListener("click", (e)=>{
@@ -873,7 +873,7 @@ class WalkerObject {
 }
 class MapGenerator {
     floorConstraints = new (0, _utils.Vec2D)(0.1, 0.25);
-    constructor(mapDimensions, ctx, maxWalkers, fillPercentage, visualise, waitTime, game){
+    constructor(mapDimensions, ctx, maxWalkers, fillPercentage, visualise, waitTime, game, tileSize = game.playerSize){
         this.mapDimensions = mapDimensions;
         this.maxWalkers = maxWalkers;
         this.fillPercentage = fillPercentage;
@@ -882,6 +882,7 @@ class MapGenerator {
         this.ctx = ctx;
         this.generated = false;
         this.game = game;
+        this.tileSize = tileSize;
     }
     // Initialize the map
     initMap() {
@@ -926,6 +927,7 @@ class MapGenerator {
             //this.finalMap[i][j] = this.removeTooMuchWater(new Vec2D(i, j)) ? this.createRandomFloorTile(this.floorConstraints) : this.finalMap[i][j];
             }
             this.zoom();
+            this.zoom();
             this.finalMap = [
                 ...this.map
             ];
@@ -933,7 +935,8 @@ class MapGenerator {
             for(let i = 0; i < this.mapDimensions.x; i++)for(let j = 0; j < this.mapDimensions.y; j++)this.finalMap[i][j] = this.map[i][j] == TileType.Floor ? this.createRandomFloorTile(this.floorConstraints) : this.map[i][j];
             this.game.loadingStatus = "Generating map (5/5) - Adding sand";
             for(let i = 0; i < this.mapDimensions.x; i++)for(let j = 0; j < this.mapDimensions.y; j++)this.finalMap[i][j] = this.makeSand(new (0, _utils.Vec2D)(i, j)) ? TileType.Sand : this.map[i][j];
-            console.log("%cFinished generating map.   src: engine/map.ts:122", "color: #44ee66;font-size: 1.5em;font-family: 'Roboto Mono', monospace;");
+            for(let i = 0; i < this.mapDimensions.x; i++)for(let j = 0; j < this.mapDimensions.y; j++)this.finalMap[i][j] = this.checkSand(new (0, _utils.Vec2D)(i, j)) ? this.createRandomFloorTile(this.floorConstraints) : this.finalMap[i][j];
+            console.log("%cFinished generating map.   src: engine/map.ts:139", "color: #44ee66;font-size: 1.5em;font-family: 'Roboto Mono', monospace;");
             // Debugging
             if (!this.game.onlyMap) {
                 this.game.state = (0, _main.GameState).Running;
@@ -970,8 +973,8 @@ class MapGenerator {
             let position;
             let dimensions;
             if (this.generated) {
-                position = new (0, _utils.Vec2D)(Math.floor(this.game.playerSize.x * j) + mapOffset.x, Math.floor(this.game.playerSize.y * i) + mapOffset.y);
-                dimensions = new (0, _utils.Vec2D)(this.game.playerSize.x + 1, this.game.playerSize.y + 1);
+                position = new (0, _utils.Vec2D)(Math.floor(this.tileSize.x * j) + mapOffset.x, Math.floor(this.tileSize.y * i) + mapOffset.y);
+                dimensions = new (0, _utils.Vec2D)(this.tileSize.x + 1, this.tileSize.y + 1);
             } else {
                 position = new (0, _utils.Vec2D)(Math.floor(this.game.canvas.width / this.mapDimensions.x * j), Math.floor(this.game.canvas.height / this.mapDimensions.y * i));
                 dimensions = new (0, _utils.Vec2D)(this.game.canvas.width / this.mapDimensions.x + 1, this.game.canvas.height / this.mapDimensions.y + 1);
@@ -991,10 +994,9 @@ class MapGenerator {
                 if (floorTile) {
                     this.game.draw(position, dimensions, this.game.assets.images[1], new (0, _utils.Vec2D)(0, 32), new (0, _utils.Vec2D)(32, 32));
                     continue;
-                } else {
-                    this.ctx.fillStyle = "#000";
-                    this.ctx.fillRect(position.x, position.y, dimensions.x, dimensions.y);
-                }
+                } else if (tile == TileType.Sand) this.ctx.fillStyle = "#c2a676";
+                else if (tile == TileType.Water) this.ctx.fillStyle = "#2a7fea";
+                this.ctx.fillRect(position.x, position.y, dimensions.x, dimensions.y);
             }
             // Check if we should draw the tile
             if (!(position.x > -dimensions.x && position.x < this.game.canvas.width + dimensions.x && position.y > -dimensions.y && position.y < this.game.canvas.height + dimensions.y && this.generated)) continue;
@@ -1077,6 +1079,16 @@ class MapGenerator {
         }
         return count;
     }
+    // Check if adjacent tiles are floor tiles
+    checkAdjacentTiles(pos, tiles, map = this.map) {
+        let count = 0;
+        for(let i = 0; i < 4; i++){
+            if (map[pos.x + (0, _utils.Direction2D).cardinalDirections[i].x] != undefined && map[pos.x + (0, _utils.Direction2D).cardinalDirections[i].x][pos.y + (0, _utils.Direction2D).cardinalDirections[i].y] != undefined) {
+                if (tiles.includes(map[pos.x + (0, _utils.Direction2D).cardinalDirections[i].x][pos.y + (0, _utils.Direction2D).cardinalDirections[i].y])) count++;
+            }
+        }
+        return count;
+    }
     // Make a sand tile after generating
     makeSand(tile) {
         if ([
@@ -1087,7 +1099,17 @@ class MapGenerator {
             TileType.FloorEmpty,
             TileType.FloorFlower,
             TileType.FloorGrass
-        ])) return true;
+        ], -2, 3)) return true;
+    }
+    checkSand(tile) {
+        if (this.map[tile.x][tile.y] == TileType.Sand) {
+            if (this.checkAdjacentTiles(tile, [
+                TileType.Floor,
+                TileType.FloorEmpty,
+                TileType.FloorFlower,
+                TileType.FloorGrass
+            ]) > 2) return true;
+        }
     }
     // Make a water tile after generating
     makeWater(tile) {
@@ -1128,7 +1150,7 @@ class MapGenerator {
                 let closeToFloor = this.checkSurroundingTiles(new (0, _utils.Vec2D)(i, j), [
                     TileType.Floor
                 ], -2, 3, newMap);
-                if (closeToFloor > 1 && Math.random() < 0.07) newMap[i][j] = TileType.Floor;
+                if (closeToFloor > 1 && Math.random() < 0.14) newMap[i][j] = TileType.Floor;
             }
         }
         this.map = newMap;
