@@ -6,7 +6,7 @@ import { Component } from "./components";
 import { Game } from "../main";
 
 // Triggers for systems
-type Trigger = "audio" | "render" | "move";
+type Trigger = "audio" | "render" | "move" | "narrator";
 
 // Function to run on entities that match the system's components
 type systemFunc = (entity: Entity, ctx?: CanvasRenderingContext2D, game?: Game) => void;
@@ -91,7 +91,7 @@ class SystemManager {
     }
 }
 
-// Entities have id's and components, and certain systems run on entities with the same components
+// Entities have ids and components, and certain systems run on entities with the same components
 export class Entity {
     id: number
     components: Component[];

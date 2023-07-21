@@ -1,7 +1,7 @@
 {
   "name": "the_adventures_of_stewin",
   "author": "Maxwell Robati",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "source": "src/main.ts",
   "targets": {
@@ -17,6 +17,7 @@
     "build": "parcel build --no-cache"
   },
   "dependencies": {
-    "parcel": "latest"
+    "parcel": "latest",
+    "simplex-noise": "^4.0.1"
   }
 }

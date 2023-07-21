@@ -13,6 +13,11 @@ export enum AssetType {
     audio
 }
 
+export interface AssetReturn {
+    images: HTMLImageElement[],
+    audio: HTMLAudioElement[]
+};
+
 export class AssetLoader {
     #assets: Asset[];
     constructor(assets: Asset[]) {
@@ -33,7 +38,7 @@ export class AssetLoader {
             }
         });
     }
-    async loadAssets(): Promise<{ images: HTMLImageElement[], audio: HTMLAudioElement[] }> {
+    async loadAssets(): Promise<AssetReturn> {
         const ASSETS = await Promise.all(this.#assets.map(asset => this.loadAsset(asset)));
         let images = [], audio = [];
         ASSETS.forEach(asset => {

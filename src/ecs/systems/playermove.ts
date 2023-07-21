@@ -12,6 +12,7 @@ export class MovePlayer extends System {
     speed: number = 2;
     moveX: number;
     moveY: number;
+
     foot: number = 1;
     frame: Vec2D = new Vec2D(0, 0)
     constructor() {
@@ -59,16 +60,16 @@ export class MovePlayer extends System {
                 game.mapOffset.x = 0;
                 this.moveX = this.moveX > 0 ? 0 : this.moveX;
             }
-            if (game.mapOffset.x <= -Math.floor((game.mapDimensions.x * game.playerSize.x) - game.canvas.width)) {
-                game.mapOffset.x = -Math.floor((game.mapDimensions.x * game.playerSize.x) - game.canvas.width);
+            if (game.mapOffset.x <= -Math.floor((game.mapDimensions.x * game.map.tileSize.x) - game.canvas.width)) {
+                game.mapOffset.x = -Math.floor((game.mapDimensions.x * game.map.tileSize.x) - game.canvas.width);
                 this.moveX = this.moveX < 0 ? 0 : this.moveX;
             }
             if (game.mapOffset.y >= 0) {
                 game.mapOffset.y = 0;
                 this.moveY = this.moveY > 0 ? 0 : this.moveY;
             }
-            if (game.mapOffset.y <= -Math.floor((game.mapDimensions.y * game.playerSize.y) - game.canvas.height)) {
-                game.mapOffset.y = -Math.floor((game.mapDimensions.y * game.playerSize.y) - game.canvas.height);
+            if (game.mapOffset.y <= -Math.floor((game.mapDimensions.y * game.map.tileSize.y) - game.canvas.height)) {
+                game.mapOffset.y = -Math.floor((game.mapDimensions.y * game.map.tileSize.y) - game.canvas.height);
                 this.moveY = this.moveY < 0 ? 0 : this.moveY;
             }
 

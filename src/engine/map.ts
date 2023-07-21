@@ -1,11 +1,13 @@
 /* walker.ts
-    * Purpose: Generates a map using a walker algorithm
+    * Generates a map using a walker algorithm and "zooms" to add detail
+    * // Generates biomes based on temperature and humidity
 */
 
 import { Vec2D } from "../utils";
 import { Direction2D } from "../utils";
 import { Game, GameState } from "../main"
 import * as utils from "../utils";
+import { createNoise2D } from "simplex-noise";
 
 export enum TileType {
     Empty,
@@ -17,6 +19,36 @@ export enum TileType {
     Water
 }
 
+/* const BIOMES = {
+    Freezing: {
+        LowRain: "Tundra",
+        MediumRain: "Tundra",
+        HighRain: "Tundra"
+    },
+    Cold: {
+        LowRain: "",
+        MediumRain: "Taiga",
+        HighRain: "Taiga"
+    },
+    Temperate: {
+        LowRain: "",
+        MediumRain: "",
+        HighRain: ""
+    },
+    Warm: {
+        LowRain: "Sahara",
+        MediumRain: "",
+        HighRain: ""
+    }
+} */
+
+enum BiomeTemp {
+    Freezing,
+    Cold,
+    Temperate,
+    Warm,
+}
+
 class WalkerObject {
     position: Vec2D;
     direction: Vec2D;
@@ -25,6 +57,39 @@ class WalkerObject {
         this.position = position;
         this.direction = direction;
         this.chanceToChange = chanceToChange;
+    }
+}
+
+class BiomeGenerator {
+    map: BiomeTemp[][]
+
+    constructor() { }
+
+    generateBiomeMap(): BiomeTemp[][] {
+        let noise = createNoise2D();
+        let noise2 = createNoise2D();
+
+        let tempMap = []
+        for (let i = 0; i < 256; i++) {
+            tempMap[i] = [];
+            for (let j = 0; j < 256; j++) {
+                let wavelength = 0.5;
+                let nx = i / 64 - 0.5, ny = j / 64 - 0.5;
+                nx *= wavelength, ny *= wavelength;
+                let noiseVal = (((noise(nx, ny) + 1) / 2) + (0.5 * ((noise2(nx * 2, ny * 2) + 1) / 2)) + (0.25 * ((noise2(nx * 4, ny * 4) + 1) / 2))) / 1.75
+                noiseVal = noiseVal < 0.1 ? BiomeTemp.Freezing
+                    : noiseVal < 0.3 ? BiomeTemp.Cold
+                        : noiseVal < 0.7 ? BiomeTemp.Temperate
+                            : BiomeTemp.Warm
+
+                //if (mapGen.checkSurroundingTiles(new Vec2D(i, j), [(noiseVal + 3) % 4], -2, 3) > 4 && noiseVal != BiomeTemp.Freezing) {
+                //    tempMap[i].push((noiseVal + 3) % 4)
+                //} else {
+                tempMap[i].push(noiseVal)
+                //}
+            }
+        }
+        return tempMap
     }
 }
 
@@ -53,6 +118,11 @@ export class MapGenerator {
         this.generated = false;
         this.game = game;
         this.tileSize = tileSize;
+    }
+    initBiomeMap() {
+        let biomeGenerator = new BiomeGenerator()
+        let tempMap = biomeGenerator.generateBiomeMap()
+        this.draw(this.ctx, new Vec2D(0), tempMap)
     }
     // Initialize the map
     initMap() {
@@ -83,13 +153,11 @@ export class MapGenerator {
         // Tick every waitTime milliseconds
         // If the map is filled
         if (this.tileCount / (this.mapDimensions.x * this.mapDimensions.y) >= this.fillPercentage) {
-            this.zoom()
-            this.zoom()
-
+            this.map = this.zoom()
+            this.map = this.zoom()
             this.finalMap = [...this.map];
+
             this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-
-
 
             this.game.loadingStatus = "Generating map (2/5) - Adding water"
             for (let i = 0; i < this.mapDimensions.x; i++) {
@@ -114,8 +182,8 @@ export class MapGenerator {
                 }
             }
 
-            this.zoom()
-            this.zoom()
+            this.map = this.zoom()
+            this.map = this.zoom()
             this.finalMap = [...this.map];
 
             this.game.loadingStatus = "Generating map (4/5) - Randomizing floor tiles"
@@ -138,9 +206,9 @@ export class MapGenerator {
                 }
             }
 
-            console.log("%cFinished generating map.   src: engine/map.ts:139", "color: #44ee66;font-size: 1.5em;font-family: 'Roboto Mono', monospace;");
+            //console.log("%cFinished generating map.   src: engine/map.ts:210", "color: #44ee66;font-size: 1.5em;font-family: 'Roboto Mono', monospace;");
 
-            // Debugging
+            // For debugging
             if (!this.game.onlyMap) {
                 this.game.state = GameState.Running;
                 this.game.ecs.addTrigger("render");
@@ -150,6 +218,7 @@ export class MapGenerator {
             }
 
             this.generated = true;
+            //this.initBiomeMap();
             this.game.loadingStatus = "Finished generating map"
             this.game.mapDimensions = this.mapDimensions;
             return;
@@ -176,36 +245,53 @@ export class MapGenerator {
         utils.sleep(this.waitTime).then(() => this.tick());
     }
     // Draw the map to the canvas
-    draw(ctx: CanvasRenderingContext2D, mapOffset: Vec2D = new Vec2D(0, 0)): void {
+    draw(ctx: CanvasRenderingContext2D, mapOffset: Vec2D = new Vec2D(0, 0), map: number[][] = this.map): void {
         //console.log("draw")
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        for (let i = 0; i < this.mapDimensions.x; i++) {
-            for (let j = 0; j < this.mapDimensions.y; j++) {
+        this.ctx.fillStyle = "#000"
+        for (let i = 0; i < map.length; i++) {
+            for (let j = 0; j < map.length; j++) {
                 let position: Vec2D
                 let dimensions: Vec2D
                 if (this.generated) {
-                    position = new Vec2D(
-                        Math.floor((this.tileSize.x * j)) + mapOffset.x,
-                        Math.floor((this.tileSize.y * i)) + mapOffset.y
-                    );
-                    dimensions = new Vec2D(
-                        (this.tileSize.x + 1),
-                        (this.tileSize.y + 1)
-                    );
+                    if (map == this.map) {
+                        position = new Vec2D(
+                            Math.floor((this.tileSize.x * j)) + mapOffset.x,
+                            Math.floor((this.tileSize.y * i)) + mapOffset.y
+                        );
+                        dimensions = new Vec2D(
+                            (this.tileSize.x + 1),
+                            (this.tileSize.y + 1)
+                        );
+                    } else {
+                        position = new Vec2D(
+                            Math.floor((this.game.canvas.width / map.length) * j),
+                            Math.floor((this.game.canvas.height / map.length) * i)
+                        )
+                        dimensions = new Vec2D(
+                            (this.game.canvas.width / map.length + 1),
+                            (this.game.canvas.height / map.length + 1)
+                        )
+                    }
                 } else {
                     position = new Vec2D(
-                        Math.floor((this.game.canvas.width / this.mapDimensions.x) * j),
-                        Math.floor((this.game.canvas.height / this.mapDimensions.y) * i)
+                        Math.floor((this.game.canvas.width / map.length) * j),
+                        Math.floor((this.game.canvas.height / map.length) * i)
                     );
                     dimensions = new Vec2D(
                         (this.game.canvas.width / this.mapDimensions.x + 1),
                         (this.game.canvas.height / this.mapDimensions.y + 1)
                     );
                 }
-                // Current tile
-                let tile = this.map[i][j];
+
+                let tile = map[i][j]
                 let floorTile = false;
-                if ([1, 2, 3, 4].includes(tile)) floorTile = true  // 2, 3, 4 correspond to floor tile variants
+
+                // Current tile
+                if (map == this.map) {
+                    if ([1, 2, 3, 4].includes(tile)) floorTile = true  // 2, 3, 4 correspond to floor tile variants
+                }
+
                 // Visualise the map
                 if (!this.generated) {
                     if (floorTile) {
@@ -223,24 +309,38 @@ export class MapGenerator {
                 if (!(position.x > -dimensions.x && position.x < this.game.canvas.width + dimensions.x && position.y > -dimensions.y && position.y < this.game.canvas.height + dimensions.y && this.generated)) {
                     continue;
                 }
-                if (floorTile) {
-                    if (tile == TileType.FloorEmpty) {
-                        this.game.draw(position, dimensions, this.game.assets.images[1], new Vec2D(0, 32), new Vec2D(32, 32))
-                    } else if (tile == TileType.FloorGrass) {
-                        this.game.draw(position, dimensions, this.game.assets.images[1], new Vec2D(0, 0), new Vec2D(32, 32))
-                    } else if (tile == TileType.FloorFlower) {
-                        this.game.draw(position, dimensions, this.game.assets.images[1], new Vec2D(32, 0), new Vec2D(32, 32))
+
+                if (map == this.map) {
+                    if (floorTile) {
+                        if (tile == TileType.FloorEmpty) {
+                            this.game.draw(position, dimensions, this.game.assets.images[1], new Vec2D(0, 32), new Vec2D(32, 32))
+                        } else if (tile == TileType.FloorGrass) {
+                            this.game.draw(position, dimensions, this.game.assets.images[1], new Vec2D(0, 0), new Vec2D(32, 32))
+                        } else if (tile == TileType.FloorFlower) {
+                            this.game.draw(position, dimensions, this.game.assets.images[1], new Vec2D(32, 0), new Vec2D(32, 32))
+                        } else this.ctx.fillStyle = "#000"
+                        continue;
+                        //this.ctx.fillStyle = "#68b547";
+                    } else if (tile == TileType.Sand) {
+                        this.game.draw(position, dimensions, this.game.assets.images[1], new Vec2D(32, 32), new Vec2D(32, 32));
+                        continue;
+                        //this.ctx.fillStyle = "#bab473";
+                    } else if (tile == TileType.Water) {
+                        this.ctx.fillStyle = "#377";
+                    } else {
+                        this.ctx.fillStyle = "#000";
                     }
-                    continue;
-                    //this.ctx.fillStyle = "#68b547";
-                } else if (tile == TileType.Sand) {
-                    this.game.draw(position, dimensions, this.game.assets.images[1], new Vec2D(32, 32), new Vec2D(32, 32));
-                    continue;
-                    //this.ctx.fillStyle = "#bab473";
-                } else if (tile == TileType.Water) {
-                    this.ctx.fillStyle = "#377";
                 } else {
-                    this.ctx.fillStyle = "#000";
+                    if (tile == BiomeTemp.Freezing) {
+                        this.ctx.fillStyle = "#fff";
+                    } else if (tile == BiomeTemp.Cold) {
+                        this.ctx.fillStyle = "#cce";
+                    } else if (tile == BiomeTemp.Temperate) {
+                        this.ctx.fillStyle = "#49a421";
+                    } else if (tile == BiomeTemp.Warm) {
+                        this.ctx.fillStyle = "#edb021";
+                    }
+                    //this.ctx.fillStyle = `rgba(${tile * 255}, ${tile * 255}, ${tile * 255}, 1)`
                 }
                 this.game.draw(position, dimensions)
             }
@@ -369,7 +469,7 @@ export class MapGenerator {
         }
     }
     // Create a floor tile at the given position
-    createRandomFloorTile(constraints: Vec2D) {
+    createRandomFloorTile(constraints: Vec2D): TileType {
         let rand = Math.random()
         // constraints.x chance to create a flower tile
         return (
@@ -382,9 +482,9 @@ export class MapGenerator {
         )
     }
     // Similar to minecraft map gen, upscales resolution of the map and adds variation
-    zoom(): void {
+    zoom(map: TileType[][] = this.map): TileType[][] {
         // Upscale map
-        let newMap = [...this.map];
+        let newMap = [...map];
         newMap = newMap.map(r => r.map(n => [n, n]).flat(1)).map(r => [[...r], [...r]]).flat(1)
         // Add variation
         for (let i = 0; i < newMap.length; i++) {
@@ -402,9 +502,13 @@ export class MapGenerator {
                 }
             }
         }
-        this.map = newMap;
-        this.mapDimensions.x *= 2;  // Upscale map dimensions (for rendering)
-        this.mapDimensions.y *= 2;  // ^
+
+        if (map == this.map) {
+            this.mapDimensions.x *= 2;  // Upscale map dimensions (for rendering)
+            this.mapDimensions.y *= 2;  // ^
+        }
+
+        return newMap;
     }
 }
 

@@ -142,15 +142,15 @@
       this[globalName] = mainExports;
     }
   }
-})({"3mPmv":[function(require,module,exports) {
+})({"4uRDe":[function(require,module,exports) {
 var global = arguments[3];
 var HMR_HOST = null;
 var HMR_PORT = 1234;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "a25e589c66234a52";
-module.bundle.HMR_BUNDLE_ID = "98384474b62c4310";
+module.bundle.HMR_BUNDLE_ID = "2a909bfa0196f4b2";
 "use strict";
-/* global HMR_HOST, HMR_PORT, HMR_ENV_HASH, HMR_SECURE, chrome, browser, globalThis, __parcel__import__, __parcel__importScripts__, ServiceWorkerGlobalScope */ /*::
+/* global HMR_HOST, HMR_PORT, HMR_ENV_HASH, HMR_SECURE, chrome, browser, __parcel__import__, __parcel__importScripts__, ServiceWorkerGlobalScope */ /*::
 import type {
   HMRAsset,
   HMRMessage,
@@ -214,43 +214,50 @@ function Module(moduleName) {
 }
 module.bundle.Module = Module;
 module.bundle.hotData = {};
-var checkedAssets, assetsToDispose, assetsToAccept /*: Array<[ParcelRequire, string]> */ ;
+var checkedAssets /*: {|[string]: boolean|} */ , assetsToDispose /*: Array<[ParcelRequire, string]> */ , assetsToAccept /*: Array<[ParcelRequire, string]> */ ;
 function getHostname() {
     return HMR_HOST || (location.protocol.indexOf("http") === 0 ? location.hostname : "localhost");
 }
 function getPort() {
     return HMR_PORT || location.port;
-} // eslint-disable-next-line no-redeclare
+}
+// eslint-disable-next-line no-redeclare
 var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== "undefined") {
     var hostname = getHostname();
     var port = getPort();
     var protocol = HMR_SECURE || location.protocol == "https:" && !/localhost|127.0.0.1|0.0.0.0/.test(hostname) ? "wss" : "ws";
-    var ws = new WebSocket(protocol + "://" + hostname + (port ? ":" + port : "") + "/"); // Web extension context
-    var extCtx = typeof chrome === "undefined" ? typeof browser === "undefined" ? null : browser : chrome; // Safari doesn't support sourceURL in error stacks.
+    var ws = new WebSocket(protocol + "://" + hostname + (port ? ":" + port : "") + "/");
+    // Web extension context
+    var extCtx = typeof chrome === "undefined" ? typeof browser === "undefined" ? null : browser : chrome;
+    // Safari doesn't support sourceURL in error stacks.
     // eval may also be disabled via CSP, so do a quick check.
     var supportsSourceURL = false;
     try {
         (0, eval)('throw new Error("test"); //# sourceURL=test.js');
     } catch (err) {
         supportsSourceURL = err.stack.includes("test.js");
-    } // $FlowFixMe
-    ws.onmessage = async function(event) {
+    }
+    // $FlowFixMe
+    ws.onmessage = async function(event /*: {data: string, ...} */ ) {
         checkedAssets = {} /*: {|[string]: boolean|} */ ;
         assetsToAccept = [];
         assetsToDispose = [];
-        var data = JSON.parse(event.data);
+        var data /*: HMRMessage */  = JSON.parse(event.data);
         if (data.type === "update") {
             // Remove error overlay if there is one
             if (typeof document !== "undefined") removeErrorOverlay();
-            let assets = data.assets.filter((asset)=>asset.envHash === HMR_ENV_HASH); // Handle HMR Update
+            let assets = data.assets.filter((asset)=>asset.envHash === HMR_ENV_HASH);
+            // Handle HMR Update
             let handled = assets.every((asset)=>{
                 return asset.type === "css" || asset.type === "js" && hmrAcceptCheck(module.bundle.root, asset.id, asset.depsByBundle);
             });
             if (handled) {
-                console.clear(); // Dispatch custom event so other runtimes (e.g React Refresh) are aware.
+                console.clear();
+                // Dispatch custom event so other runtimes (e.g React Refresh) are aware.
                 if (typeof window !== "undefined" && typeof CustomEvent !== "undefined") window.dispatchEvent(new CustomEvent("parcelhmraccept"));
-                await hmrApplyUpdates(assets); // Dispose all old assets.
+                await hmrApplyUpdates(assets);
+                // Dispose all old assets.
                 let processedAssets = {} /*: {|[string]: boolean|} */ ;
                 for(let i = 0; i < assetsToDispose.length; i++){
                     let id = assetsToDispose[i][1];
@@ -258,7 +265,8 @@ if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== "undefined") {
                         hmrDispose(assetsToDispose[i][0], id);
                         processedAssets[id] = true;
                     }
-                } // Run accept callbacks. This will also re-execute other disposed assets in topological order.
+                }
+                // Run accept callbacks. This will also re-execute other disposed assets in topological order.
                 processedAssets = {};
                 for(let i = 0; i < assetsToAccept.length; i++){
                     let id = assetsToAccept[i][1];
@@ -278,7 +286,8 @@ if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== "undefined") {
             if (typeof document !== "undefined") {
                 // Render the fancy html overlay
                 removeErrorOverlay();
-                var overlay = createErrorOverlay(data.diagnostics.html); // $FlowFixMe
+                var overlay = createErrorOverlay(data.diagnostics.html);
+                // $FlowFixMe
                 document.body.appendChild(overlay);
             }
         }
@@ -344,12 +353,16 @@ function getParents(bundle, id) /*: Array<[ParcelRequire, string]> */ {
     return parents;
 }
 function updateLink(link) {
+    var href = link.getAttribute("href");
+    if (!href) return;
     var newLink = link.cloneNode();
     newLink.onload = function() {
         if (link.parentNode !== null) // $FlowFixMe
         link.parentNode.removeChild(link);
     };
-    newLink.setAttribute("href", link.getAttribute("href").split("?")[0] + "?" + Date.now()); // $FlowFixMe
+    newLink.setAttribute("href", // $FlowFixMe
+    href.split("?")[0] + "?" + Date.now());
+    // $FlowFixMe
     link.parentNode.insertBefore(newLink, link.nextSibling);
 }
 var cssTimeout = null;
@@ -359,7 +372,7 @@ function reloadCSS() {
         var links = document.querySelectorAll('link[rel="stylesheet"]');
         for(var i = 0; i < links.length; i++){
             // $FlowFixMe[incompatible-type]
-            var href = links[i].getAttribute("href");
+            var href /*: string */  = links[i].getAttribute("href");
             var hostname = getHostname();
             var servedFromHMRServer = hostname === "localhost" ? new RegExp("^(https?:\\/\\/(0.0.0.0|127.0.0.1)|localhost):" + getPort()).test(href) : href.indexOf(hostname + ":" + getPort());
             var absolute = /^https?:\/\//i.test(href) && href.indexOf(location.origin) !== 0 && !servedFromHMRServer;
@@ -436,7 +449,7 @@ async function hmrApplyUpdates(assets) {
         });
     }
 }
-function hmrApply(bundle, asset) {
+function hmrApply(bundle /*: ParcelRequire */ , asset /*:  HMRAsset */ ) {
     var modules = bundle.modules;
     if (!modules) return;
     if (asset.type === "css") reloadCSS();
@@ -456,7 +469,7 @@ function hmrApply(bundle, asset) {
             if (supportsSourceURL) // Global eval. We would use `new Function` here but browser
             // support for source maps is better with eval.
             (0, eval)(asset.output);
-             // $FlowFixMe
+            // $FlowFixMe
             let fn = global.parcelHotUpdate[asset.id];
             modules[asset.id] = [
                 fn,
@@ -475,17 +488,19 @@ function hmrDelete(bundle, id) {
         for(let dep in deps){
             let parents = getParents(module.bundle.root, deps[dep]);
             if (parents.length === 1) orphans.push(deps[dep]);
-        } // Delete the module. This must be done before deleting dependencies in case of circular dependencies.
+        }
+        // Delete the module. This must be done before deleting dependencies in case of circular dependencies.
         delete modules[id];
-        delete bundle.cache[id]; // Now delete the orphans.
+        delete bundle.cache[id];
+        // Now delete the orphans.
         orphans.forEach((id)=>{
             hmrDelete(module.bundle.root, id);
         });
     } else if (bundle.parent) hmrDelete(bundle.parent, id);
 }
-function hmrAcceptCheck(bundle, id, depsByBundle) {
+function hmrAcceptCheck(bundle /*: ParcelRequire */ , id /*: string */ , depsByBundle /*: ?{ [string]: { [string]: string } }*/ ) {
     if (hmrAcceptCheckOne(bundle, id, depsByBundle)) return true;
-     // Traverse parents breadth first. All possible ancestries must accept the HMR update, or we'll reload.
+    // Traverse parents breadth first. All possible ancestries must accept the HMR update, or we'll reload.
     let parents = getParents(module.bundle.root, id);
     let accepted = false;
     while(parents.length > 0){
@@ -506,7 +521,7 @@ function hmrAcceptCheck(bundle, id, depsByBundle) {
     }
     return accepted;
 }
-function hmrAcceptCheckOne(bundle, id, depsByBundle) {
+function hmrAcceptCheckOne(bundle /*: ParcelRequire */ , id /*: string */ , depsByBundle /*: ?{ [string]: { [string]: string } }*/ ) {
     var modules = bundle.modules;
     if (!modules) return;
     if (depsByBundle && !depsByBundle[bundle.HMR_BUNDLE_ID]) {
@@ -530,7 +545,7 @@ function hmrAcceptCheckOne(bundle, id, depsByBundle) {
         return true;
     }
 }
-function hmrDispose(bundle, id) {
+function hmrDispose(bundle /*: ParcelRequire */ , id /*: string */ ) {
     var cached = bundle.cache[id];
     bundle.hotData[id] = {};
     if (cached && cached.hot) cached.hot.data = bundle.hotData[id];
@@ -539,9 +554,10 @@ function hmrDispose(bundle, id) {
     });
     delete bundle.cache[id];
 }
-function hmrAccept(bundle, id) {
+function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
     // Execute the module.
-    bundle(id); // Run the accept callbacks in the new version of the module.
+    bundle(id);
+    // Run the accept callbacks in the new version of the module.
     var cached = bundle.cache[id];
     if (cached && cached.hot && cached.hot._acceptCallbacks.length) cached.hot._acceptCallbacks.forEach(function(cb) {
         var assetsToAlsoAccept = cb(function() {
@@ -550,13 +566,14 @@ function hmrAccept(bundle, id) {
         if (assetsToAlsoAccept && assetsToAccept.length) {
             assetsToAlsoAccept.forEach(function(a) {
                 hmrDispose(a[0], a[1]);
-            }); // $FlowFixMe[method-unbinding]
+            });
+            // $FlowFixMe[method-unbinding]
             assetsToAccept.push.apply(assetsToAccept, assetsToAlsoAccept);
         }
     });
 }
 
-},{}],"zQOKN":[function(require,module,exports) {
+},{}],"2G5F2":[function(require,module,exports) {
 /* main.ts
     * Main game file
 */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -571,18 +588,20 @@ var _playermove = require("./ecs/systems/playermove");
 var _components = require("./ecs/components");
 var _assetloader = require("./engine/assetloader");
 var _packageJson = require("../package.json");
-let GameState;
+const $ = document.querySelector.bind(document); // Who needs jquery
+var GameState;
 (function(GameState) {
     GameState[GameState["Loading"] = 0] = "Loading";
     GameState[GameState["Running"] = 1] = "Running";
-    GameState[GameState["Menu"] = 2] = "Menu";
-    GameState[GameState["Info"] = 3] = "Info";
-    GameState[GameState["Paused"] = 4] = "Paused";
+    GameState[GameState["Paused"] = 2] = "Paused";
+    GameState[GameState["Menu"] = 3] = "Menu";
+    GameState[GameState["Settings"] = 4] = "Settings";
+    GameState[GameState["Info"] = 5] = "Info";
 })(GameState || (GameState = {}));
 class Game {
-    frames = 0;
-    stop = false;
     constructor(dimensions, assets, visualiseMap = false, onlyMap = visualiseMap){
+        this.frames = 0;
+        this.stop = false;
         this.dimensions = dimensions;
         this.canvas = document.getElementById("canvas");
         this.ctx = this.canvas.getContext("2d");
@@ -647,17 +666,17 @@ class Game {
     }
     // Main game loop
     tick() {
-        /* console.time("loop") */ if (this.state == GameState.Running) {
-            if (this.map.generated) {
-                this.frames++;
-                this.map.draw(this.ctx, this.mapOffset);
-                this.ecs.update(this.ctx, this);
-            }
+        /* console.time("loop") */ if (this.state === GameState.Running) {
+            if (!this.map.generated) return;
+            this.frames++;
+            this.map.draw(this.ctx, this.mapOffset);
+            this.ecs.update(this.ctx, this);
         }
         // Loading screen
-        if (this.state == GameState.Loading && this.visualiseMap == false) this.loading();
-        if (this.state == GameState.Menu) this.menu();
-        if (this.state == GameState.Info) this.info();
+        if (this.state === GameState.Loading && this.visualiseMap === false) this.loading();
+        if (this.state === GameState.Menu) this.menu();
+        if (this.state === GameState.Info) this.info();
+        if (this.state === GameState.Settings) this.settings();
         // To prevent multiple calls to tick()
         if (!this.stop) _utils.sleep(1000 / 60).then(()=>{
             this.tick(); /*console.timeEnd("loop")*/ 
@@ -680,21 +699,29 @@ class Game {
         this.ctx.globalAlpha = 1;
         if (document.querySelector("div") == null) {
             const START = _utils.createHTMLElement("span", "start", "button", "Start Game!"); // Create start button
+            const SETTINGS = _utils.createHTMLElement("span", "settings", "button", "Settings"); // Create settings button
             const INFO = _utils.createHTMLElement("span", "info", "button", "Info"); // Create info button
             document.body.appendChild(_utils.createHTMLElement("div", "menu", "menu")); // Create menu container
             _utils.appendElementsById("menu", [
                 START,
+                SETTINGS,
                 INFO
             ]); // Append menu buttons to menu container
             // Add event listeners to menu buttons
-            document.getElementById("start").addEventListener("click", ()=>{
+            $("#start").addEventListener("click", ()=>{
                 this.state = GameState.Loading;
                 _utils.removeElementById("menu");
                 this.init();
             });
-            document.getElementById("info").addEventListener("click", ()=>{
+            $("#settings").addEventListener("click", ()=>{
+                this.state = GameState.Settings;
+                _utils.removeElementById("menu");
+            });
+            $("#info").addEventListener("click", ()=>{
                 this.state = GameState.Info;
                 _utils.removeElementById("menu");
+                this.assets.audio[0].loop = true;
+                this.assets.audio[0].play();
             });
         }
     }
@@ -714,9 +741,34 @@ class Game {
                 INFO
             ]); // Append menu buttons to menu container
             // Add event listeners to menu buttons
-            document.getElementById("back").addEventListener("click", ()=>{
+            $("#back").addEventListener("click", ()=>{
                 this.state = GameState.Menu;
                 _utils.removeElementById("info");
+            });
+        }
+    }
+    // Settings tab
+    settings() {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        this.ctx.globalAlpha = 0.55;
+        this.draw(new (0, _utils.Vec2D)(0), this.dimensions, this.assets.images[2], new (0, _utils.Vec2D)(0), new (0, _utils.Vec2D)(256));
+        this.ctx.globalAlpha = 1;
+        if (document.querySelector("div") == null) {
+            const BACK = _utils.createHTMLElement("span", "back", "button", "Back"); // Create Back button
+            const SETTINGS = _utils.createHTMLElement("span", "settings", "text", "Settings");
+            const MAPSETTINGS = _utils.createHTMLElement("span", "mapSettings", "text", "Map Settings");
+            SETTINGS.innerHTML = "This is where you can change settings and stuff";
+            MAPSETTINGS.innerHTML = "<br><input type='checkbox' id='visMap'></input>";
+            document.body.appendChild(_utils.createHTMLElement("div", "settings", "settings"));
+            _utils.appendElementsById("settings", [
+                BACK,
+                SETTINGS,
+                MAPSETTINGS
+            ]);
+            // Add event listeners to menu buttons
+            $("#back").addEventListener("click", ()=>{
+                this.state = GameState.Menu;
+                _utils.removeElementById("settings");
             });
         }
     }
@@ -742,26 +794,23 @@ const assetLoader = new (0, _assetloader.AssetLoader)([
 let ASSETS, DIMENSIONS, GAME;
 // Load assets and start game /* Needs to be async to pre-load the assets */
 (async ()=>{
-    let style = "color: #cbb; font-size: 15px; font-family: 'Roboto Mono', monospace; font-weight: bold; text-shadow: 0 0 10px #cbb;";
-    console.log("%cVersion: " + _packageJson.version + "\nMade by: " + _packageJson.author, style) // Thanks console.log for the cool text | copilot is a god
+    let style = "color: #cbb; font-size: 15px; font-family: 'Roboto Mono', monospace; font-weight: bold; text-shadow: 0 0 10px #cbb;" // Thanks css for the cool text | github copilot is a god
     ;
-    console.log("%cDonate to my patreon: " + location.href.split("/").slice(0, -1).join("/") + "/patreon.html", style) // Based on a true story
+    console.log("%cVersion: " + _packageJson.version + "\nMade by: " + _packageJson.author, style);
+    console.log("%cCheck out the project repo: " + location.href.split("/").slice(0, -1).join("/") + "/github.html", style) // Based on a true story
     ;
     ASSETS = await assetLoader.loadAssets();
     DIMENSIONS = new (0, _utils.Vec2D)(innerHeight / 6 * 5);
     GAME = new Game(DIMENSIONS, ASSETS);
     GAME.tick();
 })();
-window.addEventListener("click", (e)=>{
+addEventListener("click", (e)=>{
     // @ts-ignore /* TypeScript thinks that tagName doesn't exist on e.target when in fact, it does. */
-    if (e.target.tagName == "A") window.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ") // hehe funny rickroll go brrrr (I'm so funny) (I'm not funny) lol
+    if (e.target.tagName == "A") window.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ") // hehe funny rickroll
     ;
-    else if (e.target.tagName == "BUTTON") GAME.init();
-}) //const VERSION = fs.readFile('../version')
- //console.log(`Version: ${VERSION}`)
-;
+});
 
-},{"./utils":"52QlR","./engine/map":"kDqBt","./ecs/ecs":"96EPF","./ecs/systems/render":"4mhar","./ecs/systems/playermove":"4nnHI","./ecs/components":"2B3cB","./engine/assetloader":"4zenl","../package.json":"1TO1v","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"52QlR":[function(require,module,exports) {
+},{"./utils":"3erpz","./engine/map":"jxRW6","./ecs/ecs":"bZYzX","./ecs/systems/render":"ev9N4","./ecs/systems/playermove":"9nUYC","./ecs/components":"6Iqin","./engine/assetloader":"3imfj","../package.json":"42zcX","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"3erpz":[function(require,module,exports) {
 /* utils.ts
     * Helper functions
 */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -787,12 +836,14 @@ class Vec2D {
     }
 }
 class Direction2D {
-    static cardinalDirections = [
-        new Vec2D(0, 1),
-        new Vec2D(0, -1),
-        new Vec2D(1, 0),
-        new Vec2D(-1, 0)
-    ];
+    static #_ = (()=>{
+        this.cardinalDirections = [
+            new Vec2D(0, 1),
+            new Vec2D(0, -1),
+            new Vec2D(1, 0),
+            new Vec2D(-1, 0)
+        ];
+    })();
     static getRandomDirection() {
         return this.cardinalDirections[Math.ceil(Math.random() * 4 - 1)];
     }
@@ -844,9 +895,10 @@ exports.export = function(dest, destName, get) {
     });
 };
 
-},{}],"kDqBt":[function(require,module,exports) {
+},{}],"jxRW6":[function(require,module,exports) {
 /* walker.ts
-    * Purpose: Generates a map using a walker algorithm
+    * Generates a map using a walker algorithm and "zooms" to add detail
+    * // Generates biomes based on temperature and humidity
 */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "TileType", ()=>TileType);
@@ -854,7 +906,8 @@ parcelHelpers.export(exports, "MapGenerator", ()=>MapGenerator) // Long before t
 ;
 var _utils = require("../utils");
 var _main = require("../main");
-let TileType;
+var _simplexNoise = require("simplex-noise");
+var TileType;
 (function(TileType) {
     TileType[TileType["Empty"] = 0] = "Empty";
     TileType[TileType["Floor"] = 1] = "Floor";
@@ -864,6 +917,34 @@ let TileType;
     TileType[TileType["Sand"] = 5] = "Sand";
     TileType[TileType["Water"] = 6] = "Water";
 })(TileType || (TileType = {}));
+var /* const BIOMES = {
+    Freezing: {
+        LowRain: "Tundra",
+        MediumRain: "Tundra",
+        HighRain: "Tundra"
+    },
+    Cold: {
+        LowRain: "",
+        MediumRain: "Taiga",
+        HighRain: "Taiga"
+    },
+    Temperate: {
+        LowRain: "",
+        MediumRain: "",
+        HighRain: ""
+    },
+    Warm: {
+        LowRain: "Sahara",
+        MediumRain: "",
+        HighRain: ""
+    }
+} */ BiomeTemp;
+(function(BiomeTemp) {
+    BiomeTemp[BiomeTemp["Freezing"] = 0] = "Freezing";
+    BiomeTemp[BiomeTemp["Cold"] = 1] = "Cold";
+    BiomeTemp[BiomeTemp["Temperate"] = 2] = "Temperate";
+    BiomeTemp[BiomeTemp["Warm"] = 3] = "Warm";
+})(BiomeTemp || (BiomeTemp = {}));
 class WalkerObject {
     constructor(position, direction, chanceToChange){
         this.position = position;
@@ -871,9 +952,34 @@ class WalkerObject {
         this.chanceToChange = chanceToChange;
     }
 }
+class BiomeGenerator {
+    constructor(){}
+    generateBiomeMap() {
+        let noise = (0, _simplexNoise.createNoise2D)();
+        let noise2 = (0, _simplexNoise.createNoise2D)();
+        let tempMap = [];
+        for(let i = 0; i < 256; i++){
+            tempMap[i] = [];
+            for(let j = 0; j < 256; j++){
+                let wavelength = 0.5;
+                let nx = i / 64 - 0.5, ny = j / 64 - 0.5;
+                nx *= wavelength, ny *= wavelength;
+                let noiseVal = ((noise(nx, ny) + 1) / 2 + 0.5 * ((noise2(nx * 2, ny * 2) + 1) / 2) + 0.25 * ((noise2(nx * 4, ny * 4) + 1) / 2)) / 1.75;
+                noiseVal = noiseVal < 0.1 ? BiomeTemp.Freezing : noiseVal < 0.3 ? BiomeTemp.Cold : noiseVal < 0.7 ? BiomeTemp.Temperate : BiomeTemp.Warm;
+                //if (mapGen.checkSurroundingTiles(new Vec2D(i, j), [(noiseVal + 3) % 4], -2, 3) > 4 && noiseVal != BiomeTemp.Freezing) {
+                //    tempMap[i].push((noiseVal + 3) % 4)
+                //} else {
+                tempMap[i].push(noiseVal);
+            //}
+            }
+        }
+        return tempMap;
+    }
+}
 class MapGenerator {
-    floorConstraints = new (0, _utils.Vec2D)(0.1, 0.25);
     constructor(mapDimensions, ctx, maxWalkers, fillPercentage, visualise, waitTime, game, tileSize = game.playerSize){
+        this.floorConstraints = new (0, _utils.Vec2D)(0.1, 0.25) // Chances to create a flower and grass floor tile, as opposed to an empty one.
+        ;
         this.mapDimensions = mapDimensions;
         this.maxWalkers = maxWalkers;
         this.fillPercentage = fillPercentage;
@@ -883,6 +989,11 @@ class MapGenerator {
         this.generated = false;
         this.game = game;
         this.tileSize = tileSize;
+    }
+    initBiomeMap() {
+        let biomeGenerator = new BiomeGenerator();
+        let tempMap = biomeGenerator.generateBiomeMap();
+        this.draw(this.ctx, new (0, _utils.Vec2D)(0), tempMap);
     }
     // Initialize the map
     initMap() {
@@ -909,8 +1020,8 @@ class MapGenerator {
         // Tick every waitTime milliseconds
         // If the map is filled
         if (this.tileCount / (this.mapDimensions.x * this.mapDimensions.y) >= this.fillPercentage) {
-            this.zoom();
-            this.zoom();
+            this.map = this.zoom();
+            this.map = this.zoom();
             this.finalMap = [
                 ...this.map
             ];
@@ -926,8 +1037,8 @@ class MapGenerator {
                 }
             //this.finalMap[i][j] = this.removeTooMuchWater(new Vec2D(i, j)) ? this.createRandomFloorTile(this.floorConstraints) : this.finalMap[i][j];
             }
-            this.zoom();
-            this.zoom();
+            this.map = this.zoom();
+            this.map = this.zoom();
             this.finalMap = [
                 ...this.map
             ];
@@ -936,14 +1047,15 @@ class MapGenerator {
             this.game.loadingStatus = "Generating map (5/5) - Adding sand";
             for(let i = 0; i < this.mapDimensions.x; i++)for(let j = 0; j < this.mapDimensions.y; j++)this.finalMap[i][j] = this.makeSand(new (0, _utils.Vec2D)(i, j)) ? TileType.Sand : this.map[i][j];
             for(let i = 0; i < this.mapDimensions.x; i++)for(let j = 0; j < this.mapDimensions.y; j++)this.finalMap[i][j] = this.checkSand(new (0, _utils.Vec2D)(i, j)) ? this.createRandomFloorTile(this.floorConstraints) : this.finalMap[i][j];
-            console.log("%cFinished generating map.   src: engine/map.ts:139", "color: #44ee66;font-size: 1.5em;font-family: 'Roboto Mono', monospace;");
-            // Debugging
+            //console.log("%cFinished generating map.   src: engine/map.ts:210", "color: #44ee66;font-size: 1.5em;font-family: 'Roboto Mono', monospace;");
+            // For debugging
             if (!this.game.onlyMap) {
                 this.game.state = (0, _main.GameState).Running;
                 this.game.ecs.addTrigger("render");
                 this.game.ecs.addTrigger("move");
             } else this.draw(this.ctx);
             this.generated = true;
+            //this.initBiomeMap();
             this.game.loadingStatus = "Finished generating map";
             this.game.mapDimensions = this.mapDimensions;
             return;
@@ -966,29 +1078,37 @@ class MapGenerator {
         _utils.sleep(this.waitTime).then(()=>this.tick());
     }
     // Draw the map to the canvas
-    draw(ctx, mapOffset = new (0, _utils.Vec2D)(0, 0)) {
+    draw(ctx, mapOffset = new (0, _utils.Vec2D)(0, 0), map = this.map) {
         //console.log("draw")
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        for(let i = 0; i < this.mapDimensions.x; i++)for(let j = 0; j < this.mapDimensions.y; j++){
+        this.ctx.fillStyle = "#000";
+        for(let i = 0; i < map.length; i++)for(let j = 0; j < map.length; j++){
             let position;
             let dimensions;
             if (this.generated) {
-                position = new (0, _utils.Vec2D)(Math.floor(this.tileSize.x * j) + mapOffset.x, Math.floor(this.tileSize.y * i) + mapOffset.y);
-                dimensions = new (0, _utils.Vec2D)(this.tileSize.x + 1, this.tileSize.y + 1);
+                if (map == this.map) {
+                    position = new (0, _utils.Vec2D)(Math.floor(this.tileSize.x * j) + mapOffset.x, Math.floor(this.tileSize.y * i) + mapOffset.y);
+                    dimensions = new (0, _utils.Vec2D)(this.tileSize.x + 1, this.tileSize.y + 1);
+                } else {
+                    position = new (0, _utils.Vec2D)(Math.floor(this.game.canvas.width / map.length * j), Math.floor(this.game.canvas.height / map.length * i));
+                    dimensions = new (0, _utils.Vec2D)(this.game.canvas.width / map.length + 1, this.game.canvas.height / map.length + 1);
+                }
             } else {
-                position = new (0, _utils.Vec2D)(Math.floor(this.game.canvas.width / this.mapDimensions.x * j), Math.floor(this.game.canvas.height / this.mapDimensions.y * i));
+                position = new (0, _utils.Vec2D)(Math.floor(this.game.canvas.width / map.length * j), Math.floor(this.game.canvas.height / map.length * i));
                 dimensions = new (0, _utils.Vec2D)(this.game.canvas.width / this.mapDimensions.x + 1, this.game.canvas.height / this.mapDimensions.y + 1);
             }
-            // Current tile
-            let tile = this.map[i][j];
+            let tile = map[i][j];
             let floorTile = false;
-            if ([
-                1,
-                2,
-                3,
-                4
-            ].includes(tile)) floorTile = true // 2, 3, 4 correspond to floor tile variants
-            ;
+            // Current tile
+            if (map == this.map) {
+                if ([
+                    1,
+                    2,
+                    3,
+                    4
+                ].includes(tile)) floorTile = true // 2, 3, 4 correspond to floor tile variants
+                ;
+            }
             // Visualise the map
             if (!this.generated) {
                 if (floorTile) {
@@ -1000,18 +1120,27 @@ class MapGenerator {
             }
             // Check if we should draw the tile
             if (!(position.x > -dimensions.x && position.x < this.game.canvas.width + dimensions.x && position.y > -dimensions.y && position.y < this.game.canvas.height + dimensions.y && this.generated)) continue;
-            if (floorTile) {
-                if (tile == TileType.FloorEmpty) this.game.draw(position, dimensions, this.game.assets.images[1], new (0, _utils.Vec2D)(0, 32), new (0, _utils.Vec2D)(32, 32));
-                else if (tile == TileType.FloorGrass) this.game.draw(position, dimensions, this.game.assets.images[1], new (0, _utils.Vec2D)(0, 0), new (0, _utils.Vec2D)(32, 32));
-                else if (tile == TileType.FloorFlower) this.game.draw(position, dimensions, this.game.assets.images[1], new (0, _utils.Vec2D)(32, 0), new (0, _utils.Vec2D)(32, 32));
-                continue;
-            //this.ctx.fillStyle = "#68b547";
-            } else if (tile == TileType.Sand) {
-                this.game.draw(position, dimensions, this.game.assets.images[1], new (0, _utils.Vec2D)(32, 32), new (0, _utils.Vec2D)(32, 32));
-                continue;
-            //this.ctx.fillStyle = "#bab473";
-            } else if (tile == TileType.Water) this.ctx.fillStyle = "#377";
-            else this.ctx.fillStyle = "#000";
+            if (map == this.map) {
+                if (floorTile) {
+                    if (tile == TileType.FloorEmpty) this.game.draw(position, dimensions, this.game.assets.images[1], new (0, _utils.Vec2D)(0, 32), new (0, _utils.Vec2D)(32, 32));
+                    else if (tile == TileType.FloorGrass) this.game.draw(position, dimensions, this.game.assets.images[1], new (0, _utils.Vec2D)(0, 0), new (0, _utils.Vec2D)(32, 32));
+                    else if (tile == TileType.FloorFlower) this.game.draw(position, dimensions, this.game.assets.images[1], new (0, _utils.Vec2D)(32, 0), new (0, _utils.Vec2D)(32, 32));
+                    else this.ctx.fillStyle = "#000";
+                    continue;
+                //this.ctx.fillStyle = "#68b547";
+                } else if (tile == TileType.Sand) {
+                    this.game.draw(position, dimensions, this.game.assets.images[1], new (0, _utils.Vec2D)(32, 32), new (0, _utils.Vec2D)(32, 32));
+                    continue;
+                //this.ctx.fillStyle = "#bab473";
+                } else if (tile == TileType.Water) this.ctx.fillStyle = "#377";
+                else this.ctx.fillStyle = "#000";
+            } else {
+                if (tile == BiomeTemp.Freezing) this.ctx.fillStyle = "#fff";
+                else if (tile == BiomeTemp.Cold) this.ctx.fillStyle = "#cce";
+                else if (tile == BiomeTemp.Temperate) this.ctx.fillStyle = "#49a421";
+                else if (tile == BiomeTemp.Warm) this.ctx.fillStyle = "#edb021";
+            //this.ctx.fillStyle = `rgba(${tile * 255}, ${tile * 255}, ${tile * 255}, 1)`
+            }
             this.game.draw(position, dimensions);
         }
     }
@@ -1123,10 +1252,10 @@ class MapGenerator {
         rand < constraints.y ? TileType.FloorGrass : TileType.FloorEmpty;
     }
     // Similar to minecraft map gen, upscales resolution of the map and adds variation
-    zoom() {
+    zoom(map = this.map) {
         // Upscale map
         let newMap = [
-            ...this.map
+            ...map
         ];
         newMap = newMap.map((r)=>r.map((n)=>[
                     n,
@@ -1153,13 +1282,612 @@ class MapGenerator {
                 if (closeToFloor > 1 && Math.random() < 0.14) newMap[i][j] = TileType.Floor;
             }
         }
-        this.map = newMap;
-        this.mapDimensions.x *= 2; // Upscale map dimensions (for rendering)
-        this.mapDimensions.y *= 2; // ^
+        if (map == this.map) {
+            this.mapDimensions.x *= 2; // Upscale map dimensions (for rendering)
+            this.mapDimensions.y *= 2; // ^
+        }
+        return newMap;
     }
 }
 
-},{"../utils":"52QlR","../main":"zQOKN","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"96EPF":[function(require,module,exports) {
+},{"../utils":"3erpz","../main":"2G5F2","simplex-noise":"7rVhE","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"7rVhE":[function(require,module,exports) {
+/*
+ * A fast javascript implementation of simplex noise by Jonas Wagner
+
+Based on a speed-improved simplex noise algorithm for 2D, 3D and 4D in Java.
+Which is based on example code by Stefan Gustavson (stegu@itn.liu.se).
+With Optimisations by Peter Eastman (peastman@drizzle.stanford.edu).
+Better rank ordering method by Stefan Gustavson in 2012.
+
+ Copyright (c) 2022 Jonas Wagner
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+ */ // these #__PURE__ comments help uglifyjs with dead code removal
+// 
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+/**
+ * Creates a 2D noise function
+ * @param random the random function that will be used to build the permutation table
+ * @returns {NoiseFunction2D}
+ */ parcelHelpers.export(exports, "createNoise2D", ()=>createNoise2D);
+/**
+ * Creates a 3D noise function
+ * @param random the random function that will be used to build the permutation table
+ * @returns {NoiseFunction3D}
+ */ parcelHelpers.export(exports, "createNoise3D", ()=>createNoise3D);
+/**
+ * Creates a 4D noise function
+ * @param random the random function that will be used to build the permutation table
+ * @returns {NoiseFunction4D}
+ */ parcelHelpers.export(exports, "createNoise4D", ()=>createNoise4D);
+/**
+ * Builds a random permutation table.
+ * This is exported only for (internal) testing purposes.
+ * Do not rely on this export.
+ * @private
+ */ parcelHelpers.export(exports, "buildPermutationTable", ()=>buildPermutationTable);
+const F2 = /*#__PURE__*/ 0.5 * (Math.sqrt(3.0) - 1.0);
+const G2 = /*#__PURE__*/ (3.0 - Math.sqrt(3.0)) / 6.0;
+const F3 = 1.0 / 3.0;
+const G3 = 1.0 / 6.0;
+const F4 = /*#__PURE__*/ (Math.sqrt(5.0) - 1.0) / 4.0;
+const G4 = /*#__PURE__*/ (5.0 - Math.sqrt(5.0)) / 20.0;
+// I'm really not sure why this | 0 (basically a coercion to int)
+// is making this faster but I get ~5 million ops/sec more on the
+// benchmarks across the board or a ~10% speedup.
+const fastFloor = (x)=>Math.floor(x) | 0;
+const grad2 = /*#__PURE__*/ new Float64Array([
+    1,
+    1,
+    -1,
+    1,
+    1,
+    -1,
+    -1,
+    -1,
+    1,
+    0,
+    -1,
+    0,
+    1,
+    0,
+    -1,
+    0,
+    0,
+    1,
+    0,
+    -1,
+    0,
+    1,
+    0,
+    -1
+]);
+// double seems to be faster than single or int's
+// probably because most operations are in double precision
+const grad3 = /*#__PURE__*/ new Float64Array([
+    1,
+    1,
+    0,
+    -1,
+    1,
+    0,
+    1,
+    -1,
+    0,
+    -1,
+    -1,
+    0,
+    1,
+    0,
+    1,
+    -1,
+    0,
+    1,
+    1,
+    0,
+    -1,
+    -1,
+    0,
+    -1,
+    0,
+    1,
+    1,
+    0,
+    -1,
+    1,
+    0,
+    1,
+    -1,
+    0,
+    -1,
+    -1
+]);
+// double is a bit quicker here as well
+const grad4 = /*#__PURE__*/ new Float64Array([
+    0,
+    1,
+    1,
+    1,
+    0,
+    1,
+    1,
+    -1,
+    0,
+    1,
+    -1,
+    1,
+    0,
+    1,
+    -1,
+    -1,
+    0,
+    -1,
+    1,
+    1,
+    0,
+    -1,
+    1,
+    -1,
+    0,
+    -1,
+    -1,
+    1,
+    0,
+    -1,
+    -1,
+    -1,
+    1,
+    0,
+    1,
+    1,
+    1,
+    0,
+    1,
+    -1,
+    1,
+    0,
+    -1,
+    1,
+    1,
+    0,
+    -1,
+    -1,
+    -1,
+    0,
+    1,
+    1,
+    -1,
+    0,
+    1,
+    -1,
+    -1,
+    0,
+    -1,
+    1,
+    -1,
+    0,
+    -1,
+    -1,
+    1,
+    1,
+    0,
+    1,
+    1,
+    1,
+    0,
+    -1,
+    1,
+    -1,
+    0,
+    1,
+    1,
+    -1,
+    0,
+    -1,
+    -1,
+    1,
+    0,
+    1,
+    -1,
+    1,
+    0,
+    -1,
+    -1,
+    -1,
+    0,
+    1,
+    -1,
+    -1,
+    0,
+    -1,
+    1,
+    1,
+    1,
+    0,
+    1,
+    1,
+    -1,
+    0,
+    1,
+    -1,
+    1,
+    0,
+    1,
+    -1,
+    -1,
+    0,
+    -1,
+    1,
+    1,
+    0,
+    -1,
+    1,
+    -1,
+    0,
+    -1,
+    -1,
+    1,
+    0,
+    -1,
+    -1,
+    -1,
+    0
+]);
+function createNoise2D(random = Math.random) {
+    const perm = buildPermutationTable(random);
+    // precalculating this yields a little ~3% performance improvement.
+    const permGrad2x = new Float64Array(perm).map((v)=>grad2[v % 12 * 2]);
+    const permGrad2y = new Float64Array(perm).map((v)=>grad2[v % 12 * 2 + 1]);
+    return function noise2D(x, y) {
+        // if(!isFinite(x) || !isFinite(y)) return 0;
+        let n0 = 0; // Noise contributions from the three corners
+        let n1 = 0;
+        let n2 = 0;
+        // Skew the input space to determine which simplex cell we're in
+        const s = (x + y) * F2; // Hairy factor for 2D
+        const i = fastFloor(x + s);
+        const j = fastFloor(y + s);
+        const t = (i + j) * G2;
+        const X0 = i - t; // Unskew the cell origin back to (x,y) space
+        const Y0 = j - t;
+        const x0 = x - X0; // The x,y distances from the cell origin
+        const y0 = y - Y0;
+        // For the 2D case, the simplex shape is an equilateral triangle.
+        // Determine which simplex we are in.
+        let i1, j1; // Offsets for second (middle) corner of simplex in (i,j) coords
+        if (x0 > y0) {
+            i1 = 1;
+            j1 = 0;
+        } else {
+            i1 = 0;
+            j1 = 1;
+        } // upper triangle, YX order: (0,0)->(0,1)->(1,1)
+        // A step of (1,0) in (i,j) means a step of (1-c,-c) in (x,y), and
+        // a step of (0,1) in (i,j) means a step of (-c,1-c) in (x,y), where
+        // c = (3-sqrt(3))/6
+        const x1 = x0 - i1 + G2; // Offsets for middle corner in (x,y) unskewed coords
+        const y1 = y0 - j1 + G2;
+        const x2 = x0 - 1.0 + 2.0 * G2; // Offsets for last corner in (x,y) unskewed coords
+        const y2 = y0 - 1.0 + 2.0 * G2;
+        // Work out the hashed gradient indices of the three simplex corners
+        const ii = i & 255;
+        const jj = j & 255;
+        // Calculate the contribution from the three corners
+        let t0 = 0.5 - x0 * x0 - y0 * y0;
+        if (t0 >= 0) {
+            const gi0 = ii + perm[jj];
+            const g0x = permGrad2x[gi0];
+            const g0y = permGrad2y[gi0];
+            t0 *= t0;
+            // n0 = t0 * t0 * (grad2[gi0] * x0 + grad2[gi0 + 1] * y0); // (x,y) of grad3 used for 2D gradient
+            n0 = t0 * t0 * (g0x * x0 + g0y * y0);
+        }
+        let t1 = 0.5 - x1 * x1 - y1 * y1;
+        if (t1 >= 0) {
+            const gi1 = ii + i1 + perm[jj + j1];
+            const g1x = permGrad2x[gi1];
+            const g1y = permGrad2y[gi1];
+            t1 *= t1;
+            // n1 = t1 * t1 * (grad2[gi1] * x1 + grad2[gi1 + 1] * y1);
+            n1 = t1 * t1 * (g1x * x1 + g1y * y1);
+        }
+        let t2 = 0.5 - x2 * x2 - y2 * y2;
+        if (t2 >= 0) {
+            const gi2 = ii + 1 + perm[jj + 1];
+            const g2x = permGrad2x[gi2];
+            const g2y = permGrad2y[gi2];
+            t2 *= t2;
+            // n2 = t2 * t2 * (grad2[gi2] * x2 + grad2[gi2 + 1] * y2);
+            n2 = t2 * t2 * (g2x * x2 + g2y * y2);
+        }
+        // Add contributions from each corner to get the final noise value.
+        // The result is scaled to return values in the interval [-1,1].
+        return 70.0 * (n0 + n1 + n2);
+    };
+}
+function createNoise3D(random = Math.random) {
+    const perm = buildPermutationTable(random);
+    // precalculating these seems to yield a speedup of over 15%
+    const permGrad3x = new Float64Array(perm).map((v)=>grad3[v % 12 * 3]);
+    const permGrad3y = new Float64Array(perm).map((v)=>grad3[v % 12 * 3 + 1]);
+    const permGrad3z = new Float64Array(perm).map((v)=>grad3[v % 12 * 3 + 2]);
+    return function noise3D(x, y, z) {
+        let n0, n1, n2, n3; // Noise contributions from the four corners
+        // Skew the input space to determine which simplex cell we're in
+        const s = (x + y + z) * F3; // Very nice and simple skew factor for 3D
+        const i = fastFloor(x + s);
+        const j = fastFloor(y + s);
+        const k = fastFloor(z + s);
+        const t = (i + j + k) * G3;
+        const X0 = i - t; // Unskew the cell origin back to (x,y,z) space
+        const Y0 = j - t;
+        const Z0 = k - t;
+        const x0 = x - X0; // The x,y,z distances from the cell origin
+        const y0 = y - Y0;
+        const z0 = z - Z0;
+        // For the 3D case, the simplex shape is a slightly irregular tetrahedron.
+        // Determine which simplex we are in.
+        let i1, j1, k1; // Offsets for second corner of simplex in (i,j,k) coords
+        let i2, j2, k2; // Offsets for third corner of simplex in (i,j,k) coords
+        if (x0 >= y0) {
+            if (y0 >= z0) {
+                i1 = 1;
+                j1 = 0;
+                k1 = 0;
+                i2 = 1;
+                j2 = 1;
+                k2 = 0;
+            } else if (x0 >= z0) {
+                i1 = 1;
+                j1 = 0;
+                k1 = 0;
+                i2 = 1;
+                j2 = 0;
+                k2 = 1;
+            } else {
+                i1 = 0;
+                j1 = 0;
+                k1 = 1;
+                i2 = 1;
+                j2 = 0;
+                k2 = 1;
+            } // Z X Y order
+        } else {
+            if (y0 < z0) {
+                i1 = 0;
+                j1 = 0;
+                k1 = 1;
+                i2 = 0;
+                j2 = 1;
+                k2 = 1;
+            } else if (x0 < z0) {
+                i1 = 0;
+                j1 = 1;
+                k1 = 0;
+                i2 = 0;
+                j2 = 1;
+                k2 = 1;
+            } else {
+                i1 = 0;
+                j1 = 1;
+                k1 = 0;
+                i2 = 1;
+                j2 = 1;
+                k2 = 0;
+            } // Y X Z order
+        }
+        // A step of (1,0,0) in (i,j,k) means a step of (1-c,-c,-c) in (x,y,z),
+        // a step of (0,1,0) in (i,j,k) means a step of (-c,1-c,-c) in (x,y,z), and
+        // a step of (0,0,1) in (i,j,k) means a step of (-c,-c,1-c) in (x,y,z), where
+        // c = 1/6.
+        const x1 = x0 - i1 + G3; // Offsets for second corner in (x,y,z) coords
+        const y1 = y0 - j1 + G3;
+        const z1 = z0 - k1 + G3;
+        const x2 = x0 - i2 + 2.0 * G3; // Offsets for third corner in (x,y,z) coords
+        const y2 = y0 - j2 + 2.0 * G3;
+        const z2 = z0 - k2 + 2.0 * G3;
+        const x3 = x0 - 1.0 + 3.0 * G3; // Offsets for last corner in (x,y,z) coords
+        const y3 = y0 - 1.0 + 3.0 * G3;
+        const z3 = z0 - 1.0 + 3.0 * G3;
+        // Work out the hashed gradient indices of the four simplex corners
+        const ii = i & 255;
+        const jj = j & 255;
+        const kk = k & 255;
+        // Calculate the contribution from the four corners
+        let t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0;
+        if (t0 < 0) n0 = 0.0;
+        else {
+            const gi0 = ii + perm[jj + perm[kk]];
+            t0 *= t0;
+            n0 = t0 * t0 * (permGrad3x[gi0] * x0 + permGrad3y[gi0] * y0 + permGrad3z[gi0] * z0);
+        }
+        let t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1;
+        if (t1 < 0) n1 = 0.0;
+        else {
+            const gi1 = ii + i1 + perm[jj + j1 + perm[kk + k1]];
+            t1 *= t1;
+            n1 = t1 * t1 * (permGrad3x[gi1] * x1 + permGrad3y[gi1] * y1 + permGrad3z[gi1] * z1);
+        }
+        let t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
+        if (t2 < 0) n2 = 0.0;
+        else {
+            const gi2 = ii + i2 + perm[jj + j2 + perm[kk + k2]];
+            t2 *= t2;
+            n2 = t2 * t2 * (permGrad3x[gi2] * x2 + permGrad3y[gi2] * y2 + permGrad3z[gi2] * z2);
+        }
+        let t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
+        if (t3 < 0) n3 = 0.0;
+        else {
+            const gi3 = ii + 1 + perm[jj + 1 + perm[kk + 1]];
+            t3 *= t3;
+            n3 = t3 * t3 * (permGrad3x[gi3] * x3 + permGrad3y[gi3] * y3 + permGrad3z[gi3] * z3);
+        }
+        // Add contributions from each corner to get the final noise value.
+        // The result is scaled to stay just inside [-1,1]
+        return 32.0 * (n0 + n1 + n2 + n3);
+    };
+}
+function createNoise4D(random = Math.random) {
+    const perm = buildPermutationTable(random);
+    // precalculating these leads to a ~10% speedup
+    const permGrad4x = new Float64Array(perm).map((v)=>grad4[v % 32 * 4]);
+    const permGrad4y = new Float64Array(perm).map((v)=>grad4[v % 32 * 4 + 1]);
+    const permGrad4z = new Float64Array(perm).map((v)=>grad4[v % 32 * 4 + 2]);
+    const permGrad4w = new Float64Array(perm).map((v)=>grad4[v % 32 * 4 + 3]);
+    return function noise4D(x, y, z, w) {
+        let n0, n1, n2, n3, n4; // Noise contributions from the five corners
+        // Skew the (x,y,z,w) space to determine which cell of 24 simplices we're in
+        const s = (x + y + z + w) * F4; // Factor for 4D skewing
+        const i = fastFloor(x + s);
+        const j = fastFloor(y + s);
+        const k = fastFloor(z + s);
+        const l = fastFloor(w + s);
+        const t = (i + j + k + l) * G4; // Factor for 4D unskewing
+        const X0 = i - t; // Unskew the cell origin back to (x,y,z,w) space
+        const Y0 = j - t;
+        const Z0 = k - t;
+        const W0 = l - t;
+        const x0 = x - X0; // The x,y,z,w distances from the cell origin
+        const y0 = y - Y0;
+        const z0 = z - Z0;
+        const w0 = w - W0;
+        // For the 4D case, the simplex is a 4D shape I won't even try to describe.
+        // To find out which of the 24 possible simplices we're in, we need to
+        // determine the magnitude ordering of x0, y0, z0 and w0.
+        // Six pair-wise comparisons are performed between each possible pair
+        // of the four coordinates, and the results are used to rank the numbers.
+        let rankx = 0;
+        let ranky = 0;
+        let rankz = 0;
+        let rankw = 0;
+        if (x0 > y0) rankx++;
+        else ranky++;
+        if (x0 > z0) rankx++;
+        else rankz++;
+        if (x0 > w0) rankx++;
+        else rankw++;
+        if (y0 > z0) ranky++;
+        else rankz++;
+        if (y0 > w0) ranky++;
+        else rankw++;
+        if (z0 > w0) rankz++;
+        else rankw++;
+        // simplex[c] is a 4-vector with the numbers 0, 1, 2 and 3 in some order.
+        // Many values of c will never occur, since e.g. x>y>z>w makes x<z, y<w and x<w
+        // impossible. Only the 24 indices which have non-zero entries make any sense.
+        // We use a thresholding to set the coordinates in turn from the largest magnitude.
+        // Rank 3 denotes the largest coordinate.
+        // Rank 2 denotes the second largest coordinate.
+        // Rank 1 denotes the second smallest coordinate.
+        // The integer offsets for the second simplex corner
+        const i1 = rankx >= 3 ? 1 : 0;
+        const j1 = ranky >= 3 ? 1 : 0;
+        const k1 = rankz >= 3 ? 1 : 0;
+        const l1 = rankw >= 3 ? 1 : 0;
+        // The integer offsets for the third simplex corner
+        const i2 = rankx >= 2 ? 1 : 0;
+        const j2 = ranky >= 2 ? 1 : 0;
+        const k2 = rankz >= 2 ? 1 : 0;
+        const l2 = rankw >= 2 ? 1 : 0;
+        // The integer offsets for the fourth simplex corner
+        const i3 = rankx >= 1 ? 1 : 0;
+        const j3 = ranky >= 1 ? 1 : 0;
+        const k3 = rankz >= 1 ? 1 : 0;
+        const l3 = rankw >= 1 ? 1 : 0;
+        // The fifth corner has all coordinate offsets = 1, so no need to compute that.
+        const x1 = x0 - i1 + G4; // Offsets for second corner in (x,y,z,w) coords
+        const y1 = y0 - j1 + G4;
+        const z1 = z0 - k1 + G4;
+        const w1 = w0 - l1 + G4;
+        const x2 = x0 - i2 + 2.0 * G4; // Offsets for third corner in (x,y,z,w) coords
+        const y2 = y0 - j2 + 2.0 * G4;
+        const z2 = z0 - k2 + 2.0 * G4;
+        const w2 = w0 - l2 + 2.0 * G4;
+        const x3 = x0 - i3 + 3.0 * G4; // Offsets for fourth corner in (x,y,z,w) coords
+        const y3 = y0 - j3 + 3.0 * G4;
+        const z3 = z0 - k3 + 3.0 * G4;
+        const w3 = w0 - l3 + 3.0 * G4;
+        const x4 = x0 - 1.0 + 4.0 * G4; // Offsets for last corner in (x,y,z,w) coords
+        const y4 = y0 - 1.0 + 4.0 * G4;
+        const z4 = z0 - 1.0 + 4.0 * G4;
+        const w4 = w0 - 1.0 + 4.0 * G4;
+        // Work out the hashed gradient indices of the five simplex corners
+        const ii = i & 255;
+        const jj = j & 255;
+        const kk = k & 255;
+        const ll = l & 255;
+        // Calculate the contribution from the five corners
+        let t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0 - w0 * w0;
+        if (t0 < 0) n0 = 0.0;
+        else {
+            const gi0 = ii + perm[jj + perm[kk + perm[ll]]];
+            t0 *= t0;
+            n0 = t0 * t0 * (permGrad4x[gi0] * x0 + permGrad4y[gi0] * y0 + permGrad4z[gi0] * z0 + permGrad4w[gi0] * w0);
+        }
+        let t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1 - w1 * w1;
+        if (t1 < 0) n1 = 0.0;
+        else {
+            const gi1 = ii + i1 + perm[jj + j1 + perm[kk + k1 + perm[ll + l1]]];
+            t1 *= t1;
+            n1 = t1 * t1 * (permGrad4x[gi1] * x1 + permGrad4y[gi1] * y1 + permGrad4z[gi1] * z1 + permGrad4w[gi1] * w1);
+        }
+        let t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2 - w2 * w2;
+        if (t2 < 0) n2 = 0.0;
+        else {
+            const gi2 = ii + i2 + perm[jj + j2 + perm[kk + k2 + perm[ll + l2]]];
+            t2 *= t2;
+            n2 = t2 * t2 * (permGrad4x[gi2] * x2 + permGrad4y[gi2] * y2 + permGrad4z[gi2] * z2 + permGrad4w[gi2] * w2);
+        }
+        let t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3 - w3 * w3;
+        if (t3 < 0) n3 = 0.0;
+        else {
+            const gi3 = ii + i3 + perm[jj + j3 + perm[kk + k3 + perm[ll + l3]]];
+            t3 *= t3;
+            n3 = t3 * t3 * (permGrad4x[gi3] * x3 + permGrad4y[gi3] * y3 + permGrad4z[gi3] * z3 + permGrad4w[gi3] * w3);
+        }
+        let t4 = 0.6 - x4 * x4 - y4 * y4 - z4 * z4 - w4 * w4;
+        if (t4 < 0) n4 = 0.0;
+        else {
+            const gi4 = ii + 1 + perm[jj + 1 + perm[kk + 1 + perm[ll + 1]]];
+            t4 *= t4;
+            n4 = t4 * t4 * (permGrad4x[gi4] * x4 + permGrad4y[gi4] * y4 + permGrad4z[gi4] * z4 + permGrad4w[gi4] * w4);
+        }
+        // Sum up and scale the result to cover the range [-1,1]
+        return 27.0 * (n0 + n1 + n2 + n3 + n4);
+    };
+}
+function buildPermutationTable(random) {
+    const tableSize = 512;
+    const p = new Uint8Array(tableSize);
+    for(let i = 0; i < tableSize / 2; i++)p[i] = i;
+    for(let i = 0; i < tableSize / 2 - 1; i++){
+        const r = i + ~~(random() * (256 - i));
+        const aux = p[i];
+        p[i] = p[r];
+        p[r] = aux;
+    }
+    for(let i = 256; i < tableSize; i++)p[i] = p[i - 256];
+    return p;
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"bZYzX":[function(require,module,exports) {
 /* ecs.ts
     * Setup the ECS architecture
 */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -1168,7 +1896,7 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "System", ()=>System);
 // ECS functions
 parcelHelpers.export(exports, "ECS", ()=>ECS);
-// Entities have id's and components, and certain systems run on entities with the same components
+// Entities have ids and components, and certain systems run on entities with the same components
 parcelHelpers.export(exports, "Entity", ()=>Entity);
 class System {
     constructor(requiredComponents, trigger, func){
@@ -1250,7 +1978,7 @@ class Entity {
     }
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"4mhar":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"ev9N4":[function(require,module,exports) {
 /* render.ts
     * Renders an entity to the screen
 */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -1276,7 +2004,7 @@ class Render extends (0, _ecs.System) {
     }
 }
 
-},{"../ecs":"96EPF","../components":"2B3cB","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"2B3cB":[function(require,module,exports) {
+},{"../ecs":"bZYzX","../components":"6Iqin","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"6Iqin":[function(require,module,exports) {
 /* components.ts
     * All ECS components
 */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -1317,7 +2045,7 @@ class DimensionComponent extends Component {
     }
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"4nnHI":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"9nUYC":[function(require,module,exports) {
 /* playermove.ts
     * Move the player around the screen
 */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -1327,9 +2055,6 @@ var _ecs = require("../ecs");
 var _utils = require("../../utils");
 var _components = require("../components");
 class MovePlayer extends (0, _ecs.System) {
-    speed = 2;
-    foot = 1;
-    frame = new (0, _utils.Vec2D)(0, 0);
     constructor(){
         super([
             (0, _components.MoveComponent)
@@ -1365,16 +2090,16 @@ class MovePlayer extends (0, _ecs.System) {
                 game.mapOffset.x = 0;
                 this.moveX = this.moveX > 0 ? 0 : this.moveX;
             }
-            if (game.mapOffset.x <= -Math.floor(game.mapDimensions.x * game.playerSize.x - game.canvas.width)) {
-                game.mapOffset.x = -Math.floor(game.mapDimensions.x * game.playerSize.x - game.canvas.width);
+            if (game.mapOffset.x <= -Math.floor(game.mapDimensions.x * game.map.tileSize.x - game.canvas.width)) {
+                game.mapOffset.x = -Math.floor(game.mapDimensions.x * game.map.tileSize.x - game.canvas.width);
                 this.moveX = this.moveX < 0 ? 0 : this.moveX;
             }
             if (game.mapOffset.y >= 0) {
                 game.mapOffset.y = 0;
                 this.moveY = this.moveY > 0 ? 0 : this.moveY;
             }
-            if (game.mapOffset.y <= -Math.floor(game.mapDimensions.y * game.playerSize.y - game.canvas.height)) {
-                game.mapOffset.y = -Math.floor(game.mapDimensions.y * game.playerSize.y - game.canvas.height);
+            if (game.mapOffset.y <= -Math.floor(game.mapDimensions.y * game.map.tileSize.y - game.canvas.height)) {
+                game.mapOffset.y = -Math.floor(game.mapDimensions.y * game.map.tileSize.y - game.canvas.height);
                 this.moveY = this.moveY < 0 ? 0 : this.moveY;
             }
             for(let i = 0; i < 4; i++){
@@ -1407,6 +2132,9 @@ class MovePlayer extends (0, _ecs.System) {
             // game.mapOffset.x >= -1 ? this.moveX > 0 ? 0 : this.moveX : game.mapOffset.x <= -Math.floor((game.mapDimensions.x*game.playerSize.x)-game.canvas.width) ? this.moveX < 0 ? 0 : this.moveX : this.moveX;
             game.mapOffset = (0, _utils.Vec2D).add(game.mapOffset, new (0, _utils.Vec2D)(this.moveX, this.moveY));
         });
+        this.speed = 2;
+        this.foot = 1;
+        this.frame = new (0, _utils.Vec2D)(0, 0);
     }
 }
 const keys = [];
@@ -1417,7 +2145,7 @@ document.addEventListener("keyup", (e)=>{
     keys[e.key] = false;
 });
 
-},{"../ecs":"96EPF","../../utils":"52QlR","../components":"2B3cB","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"4zenl":[function(require,module,exports) {
+},{"../ecs":"bZYzX","../../utils":"3erpz","../components":"6Iqin","@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"3imfj":[function(require,module,exports) {
 /* assetloader.ts
     * Pre-loads all assets
     * Credit to https://github.com/tobyck/goose-chase/blob/master/src/engine/asset_loader.ts for the idea
@@ -1425,7 +2153,7 @@ document.addEventListener("keyup", (e)=>{
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "AssetType", ()=>AssetType);
 parcelHelpers.export(exports, "AssetLoader", ()=>AssetLoader);
-let AssetType;
+var AssetType;
 (function(AssetType) {
     AssetType[AssetType["image"] = 0] = "image";
     AssetType[AssetType["audio"] = 1] = "audio";
@@ -1464,8 +2192,8 @@ class AssetLoader {
     }
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"1TO1v":[function(require,module,exports) {
-module.exports = JSON.parse('{"name":"the_adventures_of_stewin","author":"Maxwell Robati","version":"0.1.0","license":"MIT","source":"src/main.ts","targets":{"bundle":{"sourceMap":false,"optimize":true,"outputFormat":"commonjs","distDir":"build"}},"scripts":{"watch":"parcel watch","build":"parcel build --no-cache"},"dependencies":{"parcel":"latest"}}');
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"b4oyH"}],"42zcX":[function(require,module,exports) {
+module.exports = JSON.parse('{"name":"the_adventures_of_stewin","author":"Maxwell Robati","version":"0.1.1","license":"MIT","source":"src/main.ts","targets":{"bundle":{"sourceMap":false,"optimize":true,"outputFormat":"commonjs","distDir":"build"}},"scripts":{"watch":"parcel watch","build":"parcel build --no-cache"},"dependencies":{"parcel":"latest","simplex-noise":"^4.0.1"}}');
 
-},{}]},["3mPmv","zQOKN"], "zQOKN", "parcelRequire94c2")
+},{}]},["4uRDe","2G5F2"], "2G5F2", "parcelRequirea96a")
 

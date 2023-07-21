@@ -10,35 +10,43 @@ import { Render } from "./ecs/systems/render"
 import { MovePlayer } from "./ecs/systems/playermove"
 import { DimensionComponent, ImageComponent, PositionComponent, MoveComponent } from "./ecs/components"
 import * as utils from "./utils"
-import { AssetLoader, AssetType } from "./engine/assetloader"
+import { AssetLoader, AssetType, AssetReturn } from "./engine/assetloader"
 import * as pack from "../package.json"
+
+const $ = document.querySelector.bind(document);   // Who needs jquery
 
 export enum GameState {
     Loading,
     Running,
+    Paused,
     Menu,
-    Info,
-    Paused
+    Settings,
+    Info
 };
 
 export class Game {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
+
     map: MapGenerator;
+    mapDimensions: Vec2D;
     mapOffset: Vec2D;
     dimensions: Vec2D;
-    ecs: ECS.ECS;
-    state: GameState;
     playerSize: Vec2D;
-    mapDimensions: Vec2D;
+
+    ecs: ECS.ECS;
+
+    state: GameState;
+    loadingStatus: string;
     frames: number = 0;
     stop: boolean = false;
+
     visualiseMap: boolean;
     onlyMap: boolean;
-    loadingStatus: string;
-    assets: { images: HTMLImageElement[], audio: HTMLAudioElement[] };
 
-    constructor(dimensions: Vec2D, assets, visualiseMap: boolean = false, onlyMap: boolean = visualiseMap) {
+    assets: AssetReturn;
+
+    constructor(dimensions: Vec2D, assets: AssetReturn, visualiseMap: boolean = false, onlyMap: boolean = visualiseMap) {
         this.dimensions = dimensions;
 
         this.canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -88,7 +96,6 @@ export class Game {
             this.ecs.addSystem(new MovePlayer())
             resolve('resolved')
         })
-
     }
     // Generate the map
     generateMap() {
@@ -120,22 +127,24 @@ export class Game {
     // Main game loop
     tick(): void {
         /* console.time("loop") */
-        if (this.state == GameState.Running) {
-            if (this.map.generated) {
-                this.frames++;
-                this.map.draw(this.ctx, this.mapOffset);
-                this.ecs.update(this.ctx, this)
-            }
+        if (this.state === GameState.Running) {
+            if (!this.map.generated) return
+            this.frames++;
+            this.map.draw(this.ctx, this.mapOffset);
+            this.ecs.update(this.ctx, this)
         }
         // Loading screen
-        if (this.state == GameState.Loading && this.visualiseMap == false) {
+        if (this.state === GameState.Loading && this.visualiseMap === false) {
             this.loading();
         }
-        if (this.state == GameState.Menu) {
-            this.menu()
+        if (this.state === GameState.Menu) {
+            this.menu();
         }
-        if (this.state == GameState.Info) {
-            this.info()
+        if (this.state === GameState.Info) {
+            this.info();
+        }
+        if (this.state === GameState.Settings) {
+            this.settings();
         }
         // To prevent multiple calls to tick()
         if (!this.stop)
@@ -158,20 +167,28 @@ export class Game {
         this.ctx.globalAlpha = 1;
         if (document.querySelector("div") == null) {
             const START = utils.createHTMLElement("span", "start", "button", "Start Game!");    // Create start button
+            const SETTINGS = utils.createHTMLElement("span", "settings", "button", "Settings"); // Create settings button
             const INFO = utils.createHTMLElement("span", "info", "button", "Info");             // Create info button
             document.body.appendChild(utils.createHTMLElement("div", "menu", "menu"));          // Create menu container
-            utils.appendElementsById("menu", [START, INFO]);                                    // Append menu buttons to menu container
+            utils.appendElementsById("menu", [START, SETTINGS, INFO]);                                    // Append menu buttons to menu container
 
             // Add event listeners to menu buttons
-            document.getElementById("start").addEventListener("click", () => {
+            $("#start").addEventListener("click", () => {
                 this.state = GameState.Loading;
                 utils.removeElementById("menu");
                 this.init();
             });
 
-            document.getElementById("info").addEventListener("click", () => {
+            $("#settings").addEventListener("click", () => {
+                this.state = GameState.Settings;
+                utils.removeElementById("menu");
+            });
+
+            $("#info").addEventListener("click", () => {
                 this.state = GameState.Info;
                 utils.removeElementById("menu");
+                this.assets.audio[0].loop = true
+                this.assets.audio[0].play();
             });
         }
     }
@@ -189,13 +206,39 @@ export class Game {
             utils.appendElementsById("info", [BACK, INFO]);                             // Append menu buttons to menu container
 
             // Add event listeners to menu buttons
-            document.getElementById("back").addEventListener("click", () => {
+            $("#back").addEventListener("click", () => {
                 this.state = GameState.Menu;
                 utils.removeElementById("info");
             });
         }
     }
+    // Settings tab
+    settings(): void {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        this.ctx.globalAlpha = 0.55;
+        this.draw(new Vec2D(0), this.dimensions, this.assets.images[2], new Vec2D(0), new Vec2D(256));
+        this.ctx.globalAlpha = 1;
+        if (document.querySelector("div") == null) {
+            const BACK = utils.createHTMLElement("span", "back", "button", "Back");             // Create Back button
+            const SETTINGS = utils.createHTMLElement("span", "settings", "text", "Settings");
+            const MAPSETTINGS = utils.createHTMLElement("span", "mapSettings", "text", "Map Settings");
+            SETTINGS.innerHTML = "This is where you can change settings and stuff";
+            MAPSETTINGS.innerHTML = "<br><input type='checkbox' id='visMap'></input>";
+
+
+            document.body.appendChild(utils.createHTMLElement("div", "settings", "settings"));
+            utils.appendElementsById("settings", [BACK, SETTINGS, MAPSETTINGS]);
+
+            // Add event listeners to menu buttons
+            $("#back").addEventListener("click", () => {
+                this.state = GameState.Menu;
+                utils.removeElementById("settings");
+            });
+        }
+    }
 }
+
+
 
 const assetLoader = new AssetLoader([
     { type: AssetType.image, path: "resources/images/StewieSpriteSheet.png" },
@@ -206,28 +249,22 @@ const assetLoader = new AssetLoader([
 
 let ASSETS: { images: HTMLImageElement[], audio: HTMLAudioElement[] }, DIMENSIONS: Vec2D, GAME: Game;
 
+
+
 // Load assets and start game /* Needs to be async to pre-load the assets */
 (async () => {
-    let style = "color: #cbb; font-size: 15px; font-family: 'Roboto Mono', monospace; font-weight: bold; text-shadow: 0 0 10px #cbb;"
-    console.log("%cVersion: " + pack.version + "\nMade by: " + pack.author, style) // Thanks console.log for the cool text | copilot is a god
-    console.log("%cDonate to my patreon: " + location.href.split('/').slice(0, -1).join('/') + '/patreon.html', style) // Based on a true story
+    let style = "color: #cbb; font-size: 15px; font-family: 'Roboto Mono', monospace; font-weight: bold; text-shadow: 0 0 10px #cbb;" // Thanks css for the cool text | github copilot is a god
+    console.log("%cVersion: " + pack.version + "\nMade by: " + pack.author, style)
+    console.log("%cCheck out the project repo: " + location.href.split('/').slice(0, -1).join('/') + '/github.html', style) // Based on a true story
+
     ASSETS = await assetLoader.loadAssets();
     DIMENSIONS = new Vec2D(innerHeight / 6 * 5);
     GAME = new Game(DIMENSIONS, ASSETS)
     GAME.tick()
 })();
 
-
-window.addEventListener('click', e => {
+addEventListener('click', e => {
     // @ts-ignore /* TypeScript thinks that tagName doesn't exist on e.target when in fact, it does. */
-    if (e.target.tagName == "A") {
-        window.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ")  // hehe funny rickroll go brrrr (I'm so funny) (I'm not funny) lol
-    }
-    // @ts-ignore 
-    else if (e.target.tagName == "BUTTON") {
-        GAME.init();
-    }
+    if (e.target.tagName == "A")
+        window.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ")  // hehe funny rickroll
 })
-
-//const VERSION = fs.readFile('../version')
-//console.log(`Version: ${VERSION}`)
