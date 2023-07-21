@@ -7,7 +7,7 @@ import { Vec2D } from "../utils";
 import { Direction2D } from "../utils";
 import { Game, GameState } from "../main"
 import * as utils from "../utils";
-import { createNoise2D } from "simplex-noise";
+//import { createNoise2D } from "simplex-noise";
 
 export enum TileType {
     Empty,
@@ -18,29 +18,6 @@ export enum TileType {
     Sand,
     Water
 }
-
-/* const BIOMES = {
-    Freezing: {
-        LowRain: "Tundra",
-        MediumRain: "Tundra",
-        HighRain: "Tundra"
-    },
-    Cold: {
-        LowRain: "",
-        MediumRain: "Taiga",
-        HighRain: "Taiga"
-    },
-    Temperate: {
-        LowRain: "",
-        MediumRain: "",
-        HighRain: ""
-    },
-    Warm: {
-        LowRain: "Sahara",
-        MediumRain: "",
-        HighRain: ""
-    }
-} */
 
 enum BiomeTemp {
     Freezing,
@@ -60,7 +37,7 @@ class WalkerObject {
     }
 }
 
-class BiomeGenerator {
+/* class BiomeGenerator {
     map: BiomeTemp[][]
 
     constructor() { }
@@ -91,7 +68,7 @@ class BiomeGenerator {
         }
         return tempMap
     }
-}
+} */
 
 export class MapGenerator {
     mapDimensions: Vec2D;
@@ -120,9 +97,9 @@ export class MapGenerator {
         this.tileSize = tileSize;
     }
     initBiomeMap() {
-        let biomeGenerator = new BiomeGenerator()
-        let tempMap = biomeGenerator.generateBiomeMap()
-        this.draw(this.ctx, new Vec2D(0), tempMap)
+        //let biomeGenerator = new BiomeGenerator()
+        //let tempMap = biomeGenerator.generateBiomeMap()
+        //this.draw(this.ctx, new Vec2D(0), tempMap)
     }
     // Initialize the map
     initMap() {
@@ -205,8 +182,6 @@ export class MapGenerator {
                     this.finalMap[i][j] = this.checkSand(new Vec2D(i, j)) ? this.createRandomFloorTile(this.floorConstraints) : this.finalMap[i][j];
                 }
             }
-
-            //console.log("%cFinished generating map.   src: engine/map.ts:210", "color: #44ee66;font-size: 1.5em;font-family: 'Roboto Mono', monospace;");
 
             // For debugging
             if (!this.game.onlyMap) {

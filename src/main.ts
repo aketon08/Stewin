@@ -167,10 +167,10 @@ export class Game {
         this.ctx.globalAlpha = 1;
         if (document.querySelector("div") == null) {
             const START = utils.createHTMLElement("span", "start", "button", "Start Game!");    // Create start button
-            const SETTINGS = utils.createHTMLElement("span", "settings", "button", "Settings"); // Create settings button
+            /* const SETTINGS = utils.createHTMLElement("span", "settings", "button", "Settings"); */ // Create settings button
             const INFO = utils.createHTMLElement("span", "info", "button", "Info");             // Create info button
             document.body.appendChild(utils.createHTMLElement("div", "menu", "menu"));          // Create menu container
-            utils.appendElementsById("menu", [START, SETTINGS, INFO]);                                    // Append menu buttons to menu container
+            utils.appendElementsById("menu", [START, /* SETTINGS, */ INFO]);                                    // Append menu buttons to menu container
 
             // Add event listeners to menu buttons
             $("#start").addEventListener("click", () => {
@@ -179,10 +179,10 @@ export class Game {
                 this.init();
             });
 
-            $("#settings").addEventListener("click", () => {
+            /* $("#settings").addEventListener("click", () => {
                 this.state = GameState.Settings;
                 utils.removeElementById("menu");
-            });
+            }); */
 
             $("#info").addEventListener("click", () => {
                 this.state = GameState.Info;
