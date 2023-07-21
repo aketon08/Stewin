@@ -74,7 +74,9 @@ export class Game {
         this.initECS().then(
             () => this.generateMap().then(
                 () => {
-                    this.mapOffset = new Vec2D((this.canvas.width / 2) - ((this.map.tileSize.x * this.mapDimensions.x) / 2))
+                    this.mapOffset = new Vec2D((this.canvas.width / 2) - ((this.map.tileSize.x * this.mapDimensions.x) / 2));
+                    this.assets.audio[0].loop = true;
+                    this.assets.audio[0].play();
                 }
             )
         )
@@ -187,8 +189,6 @@ export class Game {
             $("#info").addEventListener("click", () => {
                 this.state = GameState.Info;
                 utils.removeElementById("menu");
-                this.assets.audio[0].loop = true
-                this.assets.audio[0].play();
             });
         }
     }
